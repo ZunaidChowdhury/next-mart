@@ -2,12 +2,15 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useSelector } from "react-redux";
+import { usePathname, useRouter } from "next/navigation";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store";
+import { clearUser } from "@/lib/store/slices/userSlice";
+import { authClient } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiUser } from "react-icons/fi";
+import { FiX, FiUser, FiLogOut } from "react-icons/fi";
 import { Button } from "@heroui/react";
+import { toast } from "react-toastify";
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -16,7 +19,10 @@ interface MobileDrawerProps {
 
 export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   const pathname = usePathname();
-  const { isAuthenticated, email, image } = useSelector((state: RootState) => state.user);
+  const router = useRouter();
+  const dispatch = useDispatch();
+  
+  const { isAuthenticated, email, image, role } = useSelector((state: RootState) => state.user);
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -24,6 +30,18 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     { name: "About Us", href: "/about" },
     { name: "Refund Policy", href: "/refund" },
   ];
+
+  const handleSignOut = async () => {
+    try {
+      await authClient.signOut();
+      dispatch(clearUser());
+      toast.success("Signed out successfully");
+      onClose();
+      router.push("/");
+    } catch (error: any) {
+      toast.error("Failed to sign out: " + error.message);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -87,9 +105,9 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             </div>
 
             {/* Footer Session Block */}
-            <div className="border-t border-border-accent pt-6">
+            <div className="border-t border-border-accent pt-6 flex flex-col gap-4">
               {isAuthenticated ? (
-                <div className="flex items-center justify-between">
+                <>
                   <div className="flex items-center gap-3">
                     {image ? (
                       <img 
@@ -102,15 +120,30 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                         <FiUser size={18} />
                       </div>
                     )}
-                    <div className="flex flex-col">
-                      <span className="font-sans text-sm font-semibold truncate max-w-[130px]">{email}</span>
-                      <span className="font-sans text-xs text-foreground/60">Customer</span>
+                    <div className="flex flex-col truncate max-w-[170px]">
+                      <span className="font-sans text-sm font-semibold truncate">{email}</span>
+                      <span className="font-sans text-xs text-foreground/60 capitalize">{role || "Customer"}</span>
                     </div>
                   </div>
-                  <Link href="/dashboard" onClick={onClose} className="text-brand-primary-600 dark:text-brand-primary-400 text-xs font-semibold hover:underline">
-                    Dashboard
-                  </Link>
-                </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Link 
+                      href="/dashboard" 
+                      onClick={onClose} 
+                      className="text-center font-sans text-sm font-semibold text-brand-primary-600 dark:text-brand-primary-400 bg-brand-primary-500/10 hover:bg-brand-primary-500/20 py-2.5 rounded-xl transition-colors"
+                    >
+                      Dashboard Portal
+                    </Link>
+                    
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center justify-center gap-2 w-full font-sans text-sm font-semibold text-danger bg-danger/10 hover:bg-danger/20 py-2.5 rounded-xl transition-colors cursor-pointer"
+                    >
+                      <FiLogOut size={16} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </>
               ) : (
                 <Link href="/login" onClick={onClose} className="w-full block">
                   <Button 
