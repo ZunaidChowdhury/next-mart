@@ -10,6 +10,23 @@ export interface GetProductsParams {
   sortBy?: string;
 }
 
+export interface IFeature {
+  name: string;
+  value: string;
+}
+
+export interface ISpecification {
+  name: string;
+  value: string;
+}
+
+export interface IReview {
+  user: string;
+  userName: string;
+  comment: string;
+  createdAt: string;
+}
+
 export interface IProductItem {
   _id: string;
   title: string;
@@ -28,6 +45,9 @@ export interface IProductItem {
   categories: string[];
   isPrivate: boolean;
   stockCount: number;
+  coreFeatures: IFeature[];
+  specification: ISpecification[];
+  reviews: IReview[];
 }
 
 export interface ProductsResponse {
