@@ -36,7 +36,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const [activeTab, setActiveTab] = useState<TabType>("description");
 
   // Fetch wishlist state from store
-  const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const wishlistItems = useSelector((state: RootState) => state.wishlist.items || []);
   const isWishlisted = wishlistItems.some((item) => item.product === product._id);
 
   const isOutOfStock = product.stockCount <= 0 || product.availableStatus === "out-of-stock";

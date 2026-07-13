@@ -37,9 +37,9 @@ export default function Navbar() {
   
   // Retrieve cart quantities and wishlist counters from persisted Redux states
   const cartItemsCount = useSelector((state: RootState) => 
-    state.cart.items.reduce((acc, item) => acc + item.quantity, 0)
+    (state.cart.items || []).reduce((acc, item) => acc + item.quantity, 0)
   );
-  const wishlistCount = useSelector((state: RootState) => state.wishlist.items.length);
+  const wishlistCount = useSelector((state: RootState) => (state.wishlist.items || []).length);
   const { isAuthenticated, email, image, role } = useSelector((state: RootState) => state.user);
 
   const navLinks = [
