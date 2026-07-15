@@ -70,7 +70,12 @@ export default function AuthCallbackPage() {
         );
 
         toast.success(`Welcome, ${response.user.name}! 🎉`);
-        router.replace("/");
+
+        if (response.user.role === "admin") {
+          router.replace("/items/manage");
+        } else {
+          router.replace("/dashboard/buyer");
+        }
       } catch (err: any) {
         console.error("OAuth callback sync error:", err);
         toast.error(err?.message || "Sign-in sync failed. Please try again.");

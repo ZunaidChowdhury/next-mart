@@ -61,7 +61,7 @@ export default function RegisterPage() {
     name: string,
     email: string,
     image?: string
-  ): Promise<void> {
+  ): Promise<SyncResponse> {
     const response = await serverMutation<
       SyncResponse,
       { name: string; email: string; image?: string }
@@ -77,6 +77,8 @@ export default function RegisterPage() {
         token: response.token,
       })
     );
+
+    return response;
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -119,14 +121,19 @@ export default function RegisterPage() {
         return;
       }
 
-      await syncWithBackend(
+      const syncResponse = await syncWithBackend(
         data.user.name,
         data.user.email,
         data.user.image ?? avatarUrl
       );
 
       toast.success(`Welcome to NextMart, ${data.user.name}! 🎉`);
-      router.push("/");
+
+      if (syncResponse.user.role === "admin") {
+        router.push("/items/manage");
+      } else {
+        router.push("/dashboard/buyer");
+      }
     } catch (err: any) {
       toast.error(err?.message || "Registration failed. Please try again.");
     } finally {

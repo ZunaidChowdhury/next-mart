@@ -49,7 +49,7 @@ export default function LoginPage() {
     name: string,
     email: string,
     image?: string
-  ): Promise<void> {
+  ): Promise<SyncResponse> {
     const response = await serverMutation<
       SyncResponse,
       { name: string; email: string; image?: string }
@@ -65,6 +65,8 @@ export default function LoginPage() {
         token: response.token,
       })
     );
+
+    return response;
   }
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -92,14 +94,19 @@ export default function LoginPage() {
         return;
       }
 
-      await syncWithBackend(
+      const syncResponse = await syncWithBackend(
         data.user.name,
         data.user.email,
         data.user.image ?? ""
       );
 
       toast.success(`Welcome back, ${data.user.name}! 🎉`);
-      router.push("/");
+
+      if (syncResponse.user.role === "admin") {
+        router.push("/items/manage");
+      } else {
+        router.push("/dashboard/buyer");
+      }
     } catch (err: any) {
       toast.error(err?.message || "Sign-in failed. Please try again.");
     } finally {
