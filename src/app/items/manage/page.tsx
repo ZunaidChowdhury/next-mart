@@ -13,18 +13,9 @@ import {
 } from "@/lib/actions/product";
 import {
   Button,
-  Input,
-  Textarea,
   Switch,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
   Chip,
-  CheckboxGroup,
-  Checkbox,
 } from "@heroui/react";
 import {
   FiEdit2,
@@ -49,6 +40,15 @@ const AVAILABLE_CATEGORIES = [
   { label: "Electronics", value: "electronics" },
 ];
 
+// Shared Tailwind classes for native form inputs (aligned with add/page.tsx)
+const inputCls =
+  "h-11 w-full px-3 text-sm font-sans rounded-xl border border-border-accent bg-card-bg text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-brand-primary-500 transition-colors";
+const inputSmCls =
+  "h-9 w-full px-3 text-xs font-sans rounded-lg border border-border-accent bg-card-bg text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-brand-primary-500 transition-colors";
+const textareaCls =
+  "w-full px-3 py-2.5 text-sm font-sans rounded-xl border border-border-accent bg-card-bg text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-brand-primary-500 transition-colors resize-none";
+const labelCls = "block text-xs font-bold text-foreground/75 font-sans mb-1";
+
 export default function ManageProductsPage() {
   const router = useRouter();
   const { isAuthenticated, role } = useSelector(
@@ -64,12 +64,12 @@ export default function ManageProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Delete modal state
-  const deleteModal = useDisclosure();
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingProduct, setDeletingProduct] = useState<IProductItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Edit modal state
-  const editModal = useDisclosure();
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<IProductItem | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -98,10 +98,6 @@ export default function ManageProductsPage() {
     if (!isAuthenticated) {
       toast.warn("Authentication required. Redirecting to login...");
       router.push("/login?redirect=/items/manage");
-      return;
-    }
-    if (role !== "admin") {
-      setCheckingAuth(false);
       return;
     }
     setCheckingAuth(false);
@@ -166,7 +162,7 @@ export default function ManageProductsPage() {
   // --- Delete Modal ---
   const handleOpenDelete = (product: IProductItem) => {
     setDeletingProduct(product);
-    deleteModal.onOpen();
+    setIsDeleteOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -176,7 +172,7 @@ export default function ManageProductsPage() {
       await deleteProduct(deletingProduct._id);
       setProducts((prev) => prev.filter((p) => p._id !== deletingProduct._id));
       toast.success(`"${deletingProduct.title}" has been permanently deleted.`);
-      deleteModal.onClose();
+      setIsDeleteOpen(false);
       setDeletingProduct(null);
     } catch (err: any) {
       toast.error(err.message || "Delete failed. Please try again.");
@@ -209,7 +205,7 @@ export default function ManageProductsPage() {
         ? product.specification
         : [{ name: "", value: "" }]
     );
-    editModal.onOpen();
+    setIsEditOpen(true);
   };
 
   const handleEditAddVariation = () => {
@@ -241,6 +237,12 @@ export default function ManageProductsPage() {
     const updated = [...editSpecifications];
     updated[idx][key] = val;
     setEditSpecifications(updated);
+  };
+
+  const toggleCategory = (val: string) => {
+    setEditCategories((prev) =>
+      prev.includes(val) ? prev.filter((c) => c !== val) : [...prev, val]
+    );
   };
 
   const handleSubmitEdit = async () => {
@@ -296,7 +298,7 @@ export default function ManageProductsPage() {
         )
       );
       toast.success(res.message || "Product updated successfully!");
-      editModal.onClose();
+      setIsEditOpen(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to update product.");
     } finally {
@@ -358,7 +360,7 @@ export default function ManageProductsPage() {
           </p>
         </div>
         <Button
-          color="secondary"
+          variant="secondary"
           onPress={() => router.push("/items/add")}
           className="font-sans font-semibold rounded-xl shadow-md cursor-pointer flex items-center gap-2"
         >
@@ -368,15 +370,16 @@ export default function ManageProductsPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="mb-6">
-        <Input
+      <div className="mb-6 relative flex items-center">
+        <span className="absolute left-3.5 text-foreground/40">
+          <FiSearch size={16} />
+        </span>
+        <input
+          type="text"
           placeholder="Search by title or brand name..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          variant="bordered"
-          radius="md"
-          startContent={<FiSearch className="text-foreground/40" size={16} />}
-          classNames={{ input: "font-sans text-sm" }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+          className="w-full bg-card-bg border border-border-accent rounded-xl text-sm py-2.5 pl-11 pr-4 text-foreground font-sans focus:outline-none focus:border-brand-primary-500 placeholder:text-foreground/40 transition-colors"
         />
       </div>
 
@@ -460,7 +463,7 @@ export default function ManageProductsPage() {
                     <td className="px-4 py-3 text-center">
                       <Chip
                         size="sm"
-                        variant="flat"
+                        variant="soft"
                         color={product.availableStatus === "in-stock" ? "success" : "danger"}
                         className="font-sans text-[10px] font-bold"
                       >
@@ -471,9 +474,8 @@ export default function ManageProductsPage() {
                       <div className="flex items-center justify-center gap-2">
                         <Switch
                           isSelected={!product.isPrivate}
-                          onValueChange={() => handleToggleVisibility(product)}
+                          onChange={() => handleToggleVisibility(product)}
                           size="sm"
-                          color="secondary"
                         />
                         <span className="text-xs text-foreground/60 w-12 text-left">
                           {product.isPrivate ? "Private" : "Live"}
@@ -485,7 +487,7 @@ export default function ManageProductsPage() {
                         <Button
                           isIconOnly
                           size="sm"
-                          variant="light"
+                          variant="ghost"
                           onPress={() => handleOpenEdit(product)}
                           className="text-foreground/60 hover:text-brand-primary-500 rounded-lg cursor-pointer"
                         >
@@ -494,10 +496,9 @@ export default function ManageProductsPage() {
                         <Button
                           isIconOnly
                           size="sm"
-                          variant="light"
-                          color="danger"
+                          variant="ghost"
                           onPress={() => handleOpenDelete(product)}
-                          className="cursor-pointer rounded-lg"
+                          className="text-danger hover:bg-danger-soft/10 cursor-pointer rounded-lg"
                         >
                           <FiTrash2 size={15} />
                         </Button>
@@ -513,387 +514,440 @@ export default function ManageProductsPage() {
 
       {/* ── Delete Confirmation Modal ── */}
       <Modal
-        isOpen={deleteModal.isOpen}
-        onOpenChange={deleteModal.onOpenChange}
-        size="sm"
-        placement="center"
-        classNames={{ base: "bg-card-bg border border-border-accent" }}
+        isOpen={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1 font-display text-foreground">
-                Confirm Deletion
-              </ModalHeader>
-              <ModalBody>
-                <div className="flex flex-col items-center gap-4 py-2">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-danger/10 text-danger">
-                    <FiAlertTriangle size={28} />
+        <Modal.Backdrop />
+        <Modal.Container placement="center" size="sm" className="bg-card-bg border border-border-accent">
+          <Modal.Dialog>
+            {({ close }: { close: () => void }) => (
+              <>
+                <Modal.Header className="flex flex-col gap-1 font-display text-foreground">
+                  <Modal.Heading>Confirm Deletion</Modal.Heading>
+                </Modal.Header>
+                <Modal.Body>
+                  <div className="flex flex-col items-center gap-4 py-2">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-danger/10 text-danger">
+                      <FiAlertTriangle size={28} />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-sans text-sm text-foreground/70">
+                        This action is permanent and cannot be reversed. You are
+                        about to delete:
+                      </p>
+                      <p className="font-sans text-base font-bold text-foreground mt-2">
+                        &quot;{deletingProduct?.title}&quot;
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="font-sans text-sm text-foreground/70">
-                      This action is permanent and cannot be reversed. You are
-                      about to delete:
-                    </p>
-                    <p className="font-sans text-base font-bold text-foreground mt-2">
-                      &quot;{deletingProduct?.title}&quot;
-                    </p>
-                  </div>
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  variant="bordered"
-                  onPress={onClose}
-                  className="font-sans font-medium rounded-xl border-border-accent cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="danger"
-                  onPress={handleConfirmDelete}
-                  isLoading={isDeleting}
-                  className="font-sans font-bold rounded-xl cursor-pointer"
-                >
-                  Confirm Delete
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button
+                    variant="outline"
+                    onPress={close}
+                    className="font-sans font-medium rounded-xl border-border-accent cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onPress={handleConfirmDelete}
+                    isDisabled={isDeleting}
+                    className="font-sans font-bold rounded-xl cursor-pointer"
+                  >
+                    {isDeleting ? "Deleting..." : "Confirm Delete"}
+                  </Button>
+                </Modal.Footer>
+                <Modal.CloseTrigger />
+              </>
+            )}
+          </Modal.Dialog>
+        </Modal.Container>
       </Modal>
 
       {/* ── Edit Product Modal ── */}
       <Modal
-        isOpen={editModal.isOpen}
-        onOpenChange={editModal.onOpenChange}
-        size="3xl"
-        placement="center"
-        scrollBehavior="inside"
-        classNames={{ base: "bg-card-bg border border-border-accent" }}
+        isOpen={isEditOpen}
+        onOpenChange={setIsEditOpen}
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="font-display text-foreground text-xl">
-                Edit Product
-                {editingProduct && (
-                  <span className="ml-2 text-sm font-sans font-normal text-foreground/50">
-                    — {editingProduct.title}
-                  </span>
-                )}
-              </ModalHeader>
-              <ModalBody className="flex flex-col gap-5 py-4">
-
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="Product Title" value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    variant="bordered" radius="md" required />
-                  <Input label="Brand Name" value={editBrandName}
-                    onChange={(e) => setEditBrandName(e.target.value)}
-                    variant="bordered" radius="md" required />
-                  <div className="sm:col-span-2">
-                    <Input label="Model Number (Optional)" value={editModel}
-                      onChange={(e) => setEditModel(e.target.value)}
-                      variant="bordered" radius="md" />
-                  </div>
-                </div>
-
-                <Textarea label="Brief Overview" value={editOverview}
-                  onChange={(e) => setEditOverview(e.target.value)}
-                  variant="bordered" radius="md" minRows={2} required />
-
-                <Textarea label="Detailed Description" value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  variant="bordered" radius="md" minRows={4} required />
-
-                {/* Pricing & Stock */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Input type="number" label="Original Price ($)" value={editOriginalPrice}
-                    onChange={(e) => setEditOriginalPrice(e.target.value)}
-                    variant="bordered" radius="md" required />
-                  <Input type="number" label="Sale Price ($)" value={editSalePrice}
-                    onChange={(e) => setEditSalePrice(e.target.value)}
-                    variant="bordered" radius="md" required />
-                  <Input type="number" label="Stock Units" value={editStockCount}
-                    onChange={(e) => setEditStockCount(e.target.value)}
-                    variant="bordered" radius="md" required />
-                </div>
-
-                {/* Images — Read Only */}
-                {editingProduct && editingProduct.images.length > 0 && (
-                  <div>
-                    <p className="font-sans text-sm font-semibold text-foreground mb-2">
-                      Product Images{" "}
-                      <span className="text-foreground/40 font-normal text-xs">
-                        (read-only in this release)
+        <Modal.Backdrop />
+        <Modal.Container placement="center" size="lg" scroll="inside" className="bg-card-bg border border-border-accent">
+          <Modal.Dialog>
+            {({ close }: { close: () => void }) => (
+              <>
+                <Modal.Header className="font-display text-foreground text-xl">
+                  <Modal.Heading>
+                    Edit Product
+                    {editingProduct && (
+                      <span className="ml-2 text-sm font-sans font-normal text-foreground/50">
+                        — {editingProduct.title}
                       </span>
-                    </p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {editingProduct.images.map((url, idx) => (
-                        <div
-                          key={idx}
-                          className="aspect-square rounded-xl overflow-hidden border border-border-accent bg-background"
-                        >
-                          <img
-                            src={url}
-                            alt={`img-${idx}`}
-                            className="w-full h-full object-cover"
+                    )}
+                  </Modal.Heading>
+                </Modal.Header>
+                <Modal.Body className="flex flex-col gap-5 py-4">
+
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>Product Title *</label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditTitle(e.target.value)}
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Brand Name *</label>
+                      <input
+                        type="text"
+                        value={editBrandName}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditBrandName(e.target.value)}
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>Model Number (Optional)</label>
+                      <input
+                        type="text"
+                        value={editModel}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditModel(e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>Brief Overview *</label>
+                    <textarea
+                      value={editOverview}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditOverview(e.target.value)}
+                      className={textareaCls}
+                      rows={2}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>Detailed Description *</label>
+                    <textarea
+                      value={editDescription}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditDescription(e.target.value)}
+                      className={textareaCls}
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  {/* Pricing & Stock */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className={labelCls}>Original Price ($) *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editOriginalPrice}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditOriginalPrice(e.target.value)}
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Sale Price ($) *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editSalePrice}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditSalePrice(e.target.value)}
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Stock Units *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={editStockCount}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditStockCount(e.target.value)}
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Images — Read Only */}
+                  {editingProduct && editingProduct.images.length > 0 && (
+                    <div>
+                      <p className="font-sans text-sm font-semibold text-foreground mb-2">
+                        Product Images{" "}
+                        <span className="text-foreground/40 font-normal text-xs">
+                          (read-only in this release)
+                        </span>
+                      </p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {editingProduct.images.map((url, idx) => (
+                          <div
+                            key={url || idx}
+                            className="aspect-square rounded-xl overflow-hidden border border-border-accent bg-background"
+                          >
+                            <img
+                              src={url}
+                              alt={`img-${idx}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Categories */}
+                  <div>
+                    <p className={labelCls}>Categories *</p>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {AVAILABLE_CATEGORIES.map((cat) => {
+                        const isSelected = editCategories.includes(cat.value);
+                        return (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => toggleCategory(cat.value)}
+                            className={`px-3 py-1.5 text-xs font-semibold font-sans rounded-xl border transition-colors cursor-pointer ${
+                              isSelected
+                                ? "bg-brand-primary-500 border-brand-primary-500 text-white"
+                                : "bg-card-bg border-border-accent text-foreground/70 hover:border-brand-primary-500/50 hover:text-brand-primary-600 dark:hover:text-brand-primary-400"
+                            }`}
+                          >
+                            {cat.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Variations */}
+                  <div>
+                    <label className={labelCls}>Variations</label>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="text"
+                        placeholder="E.g. Polarized Black"
+                        value={editVariationInput}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditVariationInput(e.target.value)}
+                        className={inputSmCls}
+                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleEditAddVariation();
+                          }
+                        }}
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onPress={handleEditAddVariation}
+                        className="rounded-xl font-sans cursor-pointer font-medium"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    {editVariations.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {editVariations.map((tag, idx) => (
+                          <span
+                            key={tag || idx}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-primary-500/10 text-brand-primary-600 dark:text-brand-primary-400 font-sans text-xs font-semibold rounded-xl border border-brand-primary-500/20"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => handleEditRemoveVariation(idx)}
+                              className="text-foreground/40 hover:text-danger cursor-pointer transition-colors"
+                            >
+                              &times;
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Core Features */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div>
+                        <p className="font-sans text-sm font-semibold text-foreground">
+                          Core Features
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onPress={() =>
+                          setEditCoreFeatures([
+                            ...editCoreFeatures,
+                            { name: "", value: "" },
+                          ])
+                        }
+                        className="rounded-xl flex items-center gap-1.5 font-sans font-medium cursor-pointer"
+                      >
+                        <FiPlus size={13} /> Add
+                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {editCoreFeatures.map((feat, idx) => (
+                        <div key={idx} className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            placeholder="Feature Name"
+                            value={feat.name}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              handleEditFeatureChange(idx, "name", e.target.value)
+                            }
+                            className={`${inputSmCls} flex-1`}
                           />
+                          <input
+                            type="text"
+                            placeholder="Feature Value"
+                            value={feat.value}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              handleEditFeatureChange(idx, "value", e.target.value)
+                            }
+                            className={`${inputSmCls} flex-1`}
+                          />
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="ghost"
+                            onPress={() => {
+                              if (editCoreFeatures.length === 1) {
+                                setEditCoreFeatures([{ name: "", value: "" }]);
+                              } else {
+                                setEditCoreFeatures(
+                                  editCoreFeatures.filter((_, i) => i !== idx)
+                                );
+                              }
+                            }}
+                            className="cursor-pointer rounded-xl text-danger hover:bg-danger-soft/10"
+                          >
+                            <FiTrash size={15} />
+                          </Button>
                         </div>
                       ))}
                     </div>
                   </div>
-                )}
 
-                {/* Categories */}
-                <div>
-                  <p className="font-sans text-sm font-semibold text-foreground mb-2">
-                    Categories
-                  </p>
-                  <CheckboxGroup
-                    value={editCategories}
-                    onValueChange={setEditCategories}
-                    orientation="horizontal"
-                    className="gap-2 font-sans"
-                  >
-                    {AVAILABLE_CATEGORIES.map((cat) => (
-                      <Checkbox
-                        key={cat.value}
-                        value={cat.value}
-                        classNames={{ label: "text-xs font-medium text-foreground/75" }}
-                      >
-                        {cat.label}
-                      </Checkbox>
-                    ))}
-                  </CheckboxGroup>
-                </div>
-
-                {/* Variations */}
-                <div>
-                  <p className="font-sans text-sm font-semibold text-foreground mb-2">
-                    Variations
-                  </p>
-                  <div className="flex gap-2 mb-3">
-                    <Input
-                      placeholder="E.g. Polarized Black"
-                      value={editVariationInput}
-                      onChange={(e) => setEditVariationInput(e.target.value)}
-                      variant="bordered"
-                      radius="md"
-                      size="sm"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleEditAddVariation();
+                  {/* Technical Specifications */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div>
+                        <p className="font-sans text-sm font-semibold text-foreground">
+                          Technical Specifications
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onPress={() =>
+                          setEditSpecifications([
+                            ...editSpecifications,
+                            { name: "", value: "" },
+                          ])
                         }
-                      }}
-                    />
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onPress={handleEditAddVariation}
-                      className="rounded-xl font-sans cursor-pointer font-medium"
-                    >
-                      Add
-                    </Button>
-                  </div>
-                  {editVariations.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {editVariations.map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-primary-500/10 text-brand-primary-600 dark:text-brand-primary-400 font-sans text-xs font-semibold rounded-xl border border-brand-primary-500/20"
-                        >
-                          {tag}
-                          <button
-                            type="button"
-                            onClick={() => handleEditRemoveVariation(idx)}
-                            className="text-foreground/40 hover:text-danger cursor-pointer transition-colors"
+                        className="rounded-xl flex items-center gap-1.5 font-sans font-medium cursor-pointer"
+                      >
+                        <FiPlus size={13} /> Add
+                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {editSpecifications.map((spec, idx) => (
+                        <div key={idx} className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            placeholder="Spec Label"
+                            value={spec.name}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              handleEditSpecChange(idx, "name", e.target.value)
+                            }
+                            className={`${inputSmCls} flex-1`}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Spec Info"
+                            value={spec.value}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              handleEditSpecChange(idx, "value", e.target.value)
+                            }
+                            className={`${inputSmCls} flex-1`}
+                          />
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="ghost"
+                            onPress={() => {
+                              if (editSpecifications.length === 1) {
+                                setEditSpecifications([{ name: "", value: "" }]);
+                              } else {
+                                setEditSpecifications(
+                                  editSpecifications.filter((_, i) => i !== idx)
+                                );
+                              }
+                            }}
+                            className="cursor-pointer rounded-xl text-danger hover:bg-danger-soft/10"
                           >
-                            &times;
-                          </button>
-                        </span>
+                            <FiTrash size={15} />
+                          </Button>
+                        </div>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                {/* Core Features */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="font-sans text-sm font-semibold text-foreground">
-                      Core Features
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onPress={() =>
-                        setEditCoreFeatures([
-                          ...editCoreFeatures,
-                          { name: "", value: "" },
-                        ])
-                      }
-                      className="rounded-xl flex items-center gap-1.5 font-sans font-medium cursor-pointer"
-                    >
-                      <FiPlus size={13} /> Add
-                    </Button>
+                  {/* Visibility */}
+                  <div className="flex justify-between items-center p-4 rounded-xl bg-background border border-border-accent/30">
+                    <div>
+                      <p className="font-sans text-sm font-semibold text-foreground">
+                        Private Listing
+                      </p>
+                      <p className="font-sans text-xs text-foreground/50">
+                        Hide product from public search queries
+                      </p>
+                    </div>
+                    <Switch
+                      isSelected={editIsPrivate}
+                      onChange={setEditIsPrivate}
+                    />
                   </div>
-                  <div className="flex flex-col gap-2">
-                    {editCoreFeatures.map((feat, idx) => (
-                      <div key={idx} className="flex gap-2 items-center">
-                        <Input
-                          placeholder="Feature Name"
-                          value={feat.name}
-                          onChange={(e) =>
-                            handleEditFeatureChange(idx, "name", e.target.value)
-                          }
-                          variant="bordered"
-                          radius="md"
-                          size="sm"
-                          className="flex-1"
-                        />
-                        <Input
-                          placeholder="Feature Value"
-                          value={feat.value}
-                          onChange={(e) =>
-                            handleEditFeatureChange(idx, "value", e.target.value)
-                          }
-                          variant="bordered"
-                          radius="md"
-                          size="sm"
-                          className="flex-1"
-                        />
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          color="danger"
-                          variant="light"
-                          onPress={() => {
-                            if (editCoreFeatures.length === 1) {
-                              setEditCoreFeatures([{ name: "", value: "" }]);
-                            } else {
-                              setEditCoreFeatures(
-                                editCoreFeatures.filter((_, i) => i !== idx)
-                              );
-                            }
-                          }}
-                          className="cursor-pointer rounded-xl"
-                        >
-                          <FiTrash size={15} />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Technical Specifications */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="font-sans text-sm font-semibold text-foreground">
-                      Technical Specifications
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onPress={() =>
-                        setEditSpecifications([
-                          ...editSpecifications,
-                          { name: "", value: "" },
-                        ])
-                      }
-                      className="rounded-xl flex items-center gap-1.5 font-sans font-medium cursor-pointer"
-                    >
-                      <FiPlus size={13} /> Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {editSpecifications.map((spec, idx) => (
-                      <div key={idx} className="flex gap-2 items-center">
-                        <Input
-                          placeholder="Spec Label"
-                          value={spec.name}
-                          onChange={(e) =>
-                            handleEditSpecChange(idx, "name", e.target.value)
-                          }
-                          variant="bordered"
-                          radius="md"
-                          size="sm"
-                          className="flex-1"
-                        />
-                        <Input
-                          placeholder="Spec Info"
-                          value={spec.value}
-                          onChange={(e) =>
-                            handleEditSpecChange(idx, "value", e.target.value)
-                          }
-                          variant="bordered"
-                          radius="md"
-                          size="sm"
-                          className="flex-1"
-                        />
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          color="danger"
-                          variant="light"
-                          onPress={() => {
-                            if (editSpecifications.length === 1) {
-                              setEditSpecifications([{ name: "", value: "" }]);
-                            } else {
-                              setEditSpecifications(
-                                editSpecifications.filter((_, i) => i !== idx)
-                              );
-                            }
-                          }}
-                          className="cursor-pointer rounded-xl"
-                        >
-                          <FiTrash size={15} />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Visibility */}
-                <div className="flex justify-between items-center p-4 rounded-xl bg-background border border-border-accent/30">
-                  <div>
-                    <p className="font-sans text-sm font-semibold text-foreground">
-                      Private Listing
-                    </p>
-                    <p className="font-sans text-xs text-foreground/50">
-                      Hide product from public search queries
-                    </p>
-                  </div>
-                  <Switch
-                    isSelected={editIsPrivate}
-                    onValueChange={setEditIsPrivate}
-                    color="secondary"
-                  />
-                </div>
-
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  variant="bordered"
-                  onPress={onClose}
-                  className="font-sans font-medium rounded-xl border-border-accent cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="secondary"
-                  onPress={handleSubmitEdit}
-                  isLoading={isUpdating}
-                  className="font-sans font-bold rounded-xl cursor-pointer"
-                >
-                  Save Changes
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button
+                    variant="outline"
+                    onPress={close}
+                    className="font-sans font-medium rounded-xl border-border-accent cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onPress={handleSubmitEdit}
+                    isDisabled={isUpdating}
+                    className="font-sans font-bold rounded-xl cursor-pointer"
+                  >
+                    {isUpdating ? "Saving..." : "Save Changes"}
+                  </Button>
+                </Modal.Footer>
+                <Modal.CloseTrigger />
+              </>
+            )}
+          </Modal.Dialog>
+        </Modal.Container>
       </Modal>
 
     </main>
