@@ -7,6 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store";
 import { clearUser } from "@/lib/store/slices/userSlice";
+import { clearCart } from "@/lib/store/slices/cartSlice";
+import { clearWishlist } from "@/lib/store/slices/wishlistSlice";
 import { authClient } from "@/lib/auth-client";
 import { useTheme } from "@/app/theme-provider";
 import { Button, Avatar } from "@heroui/react";
@@ -59,6 +61,8 @@ export default function Navbar() {
     try {
       await authClient.signOut();
       dispatch(clearUser());
+      dispatch(clearCart());
+      dispatch(clearWishlist());
       toast.success("Signed out successfully");
       setIsDropdownOpen(false);
       router.push("/");
@@ -274,14 +278,24 @@ export default function Navbar() {
                         )}
 
                         {role !== "admin" && (
-                          <Link
-                            href="/dashboard/buyer"
-                            onClick={() => setIsDropdownOpen(false)}
-                                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-foreground/75 hover:bg-brand-primary-500/30 hover:text-brand-primary-600 dark:hover:text-brand-primary-400 transition-colors"
+                          <>
+                            <Link
+                              href="/dashboard/buyer"
+                              onClick={() => setIsDropdownOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-foreground/75 hover:bg-brand-primary-500/30 hover:text-brand-primary-600 dark:hover:text-brand-primary-400 transition-colors"
                             >
                               <FiSettings size={16} />
                               <span>Dashboard</span>
                             </Link>
+                            <Link
+                              href="/dashboard/buyer?tab=orders"
+                              onClick={() => setIsDropdownOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-foreground/75 hover:bg-brand-primary-500/30 hover:text-brand-primary-600 dark:hover:text-brand-primary-400 transition-colors"
+                            >
+                              <FiList size={16} />
+                              <span>My Orders</span>
+                            </Link>
+                          </>
                         )}
 
                         <Link

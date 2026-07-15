@@ -7,6 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store";
 import { clearUser } from "@/lib/store/slices/userSlice";
+import { clearCart } from "@/lib/store/slices/cartSlice";
+import { clearWishlist } from "@/lib/store/slices/wishlistSlice";
 import { authClient } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiUser, FiLogOut } from "react-icons/fi";
@@ -36,6 +38,8 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     try {
       await authClient.signOut();
       dispatch(clearUser());
+      dispatch(clearCart());
+      dispatch(clearWishlist());
       toast.success("Signed out successfully");
       onClose();
       router.push("/");

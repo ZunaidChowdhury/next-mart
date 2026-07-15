@@ -20,7 +20,7 @@ export default function Footer() {
     const catalogLinks = [
         { label: "Men's Collection", href: "/shop?category=men" },
         { label: "Women's Collection", href: "/shop?category=women" },
-        { label: "Kids' Collection", href: "/shop?category=kids" },
+        { label: "Gaming Collection", href: "/shop?category=gaming" },
         { label: "Featured Gadgets", href: "/shop?category=gadgets" },
     ];
 
@@ -37,7 +37,7 @@ export default function Footer() {
         { label: "About NextMart", href: "/about" },
         { label: "Contact Support", href: "/support" },
         { label: "Refund Policy", href: "/refund" },
-        { label: "Privacy Blueprint", href: "/privacy" },
+        { label: "Privacy Policy", href: "/privacy" },
     ];
 
     return (

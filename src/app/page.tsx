@@ -21,28 +21,28 @@ import type { IProductItem } from "@/lib/api/product";
 // Slider slides mock data
 const slides = [
   {
-    title: "Refined Vision",
-    subtitle: "Explore our curated collection of premium designer sunglasses.",
-    cta: "Shop Sunglasses",
-    link: "/shop?category=sunglasses",
-    image: "/images/sunglasses_hero.jpg",
-    bgGradient: "from-zinc-900 to-zinc-950"
-  },
-  {
-    title: "Next-Gen Tech",
-    subtitle: "Innovative gadgets and portable devices designed for modern living.",
-    cta: "Explore Gadgets",
-    link: "/shop?category=gadgets",
-    image: "/images/gadgets_hero.jpg",
-    bgGradient: "from-slate-900 to-slate-950"
-  },
-  {
-    title: "Timeless Precision",
-    subtitle: "Luxury sports and casual watches crafted for elegance.",
-    cta: "Browse Watches",
+    title: "Precision in Every Second",
+    subtitle: "Discover our exclusive collection of premium men's watches — where craftsmanship meets modern design.",
+    cta: "Shop Watches",
     link: "/shop?category=watches",
-    image: "/images/watches_hero.jpg",
-    bgGradient: "from-neutral-900 to-neutral-950"
+    image: "/images/slide1.png",
+    bgGradient: "from-blue-950 via-blue-900 to-indigo-950"
+  },
+  {
+    title: "Elegance That Endures",
+    subtitle: "Adorn yourself with our stunning diamond ring collection — timeless beauty crafted for life's cherished moments.",
+    cta: "Shop Rings",
+    link: "/shop?category=rings",
+    image: "/images/slide2.png",
+    bgGradient: "from-red-700 via-pink-700 to-rose-700"
+  },
+  {
+    title: "Dominate the Game",
+    subtitle: "Unleash your gaming potential with high-performance laptops built for speed, graphics, and non-stop action.",
+    cta: "Explore Laptops",
+    link: "/shop?category=laptops",
+    image: "/images/slide3.png",
+    bgGradient: "from-slate-900 via-cyan-900 to-blue-900"
   }
 ];
 
@@ -105,7 +105,7 @@ export default function Home() {
     <div className="flex-1 flex flex-col bg-background transition-colors duration-300">
       
       {/* SECTION 1: HERO VIEWPORT SLIDER */}
-      <section className="relative h-[65vh] w-full overflow-hidden bg-zinc-950 text-white">
+      <section className="relative min-h-[60vh] sm:h-[65vh] w-full overflow-hidden bg-zinc-950 text-white">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -113,53 +113,67 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
-            className={`absolute inset-0 bg-gradient-to-r ${slides[currentSlide].bgGradient} flex items-center`}
+            className={`absolute inset-0 bg-gradient-to-r ${slides[currentSlide].bgGradient}`}
           >
-            {/* Slide Background Image Overlay */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay"
-              style={{ backgroundImage: `url(${slides[currentSlide].image})` }}
-            />
-            
-            <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full z-10">
-              <div className="max-w-2xl">
-                <motion.span 
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="inline-block text-xs font-bold tracking-widest text-brand-primary-400 uppercase mb-3 font-sans"
-                >
-                  Featured Collection
-                </motion.span>
-                <motion.h1 
-                  initial={{ y: 25, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 text-white"
-                >
-                  {slides[currentSlide].title}
-                </motion.h1>
-                <motion.p 
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="font-sans text-base sm:text-lg text-white/80 mb-8"
-                >
-                  {slides[currentSlide].subtitle}
-                </motion.p>
+            <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full h-full z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full items-center">
+                {/* Left: Text Content */}
+                <div className="py-12 lg:py-0">
+                  <motion.span 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="inline-block text-xs font-bold tracking-widest text-brand-primary-300 uppercase mb-3 font-sans"
+                  >
+                    Featured Collection
+                  </motion.span>
+                  <motion.h1 
+                    initial={{ y: 25, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="font-display text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight mb-4 text-white leading-tight"
+                  >
+                    {slides[currentSlide].title}
+                  </motion.h1>
+                  <motion.p 
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="font-sans text-sm sm:text-base lg:text-lg text-white/80 mb-8 max-w-lg"
+                  >
+                    {slides[currentSlide].subtitle}
+                  </motion.p>
+                  <motion.div 
+                    initial={{ y: 35, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <Link href={slides[currentSlide].link}>
+                      <Button 
+                        variant="ghost"
+                        className="font-sans font-semibold rounded-xl border-2 border-white text-white bg-transparent hover:bg-white/10 px-7 sm:px-8 py-5 sm:py-6 text-sm sm:text-base cursor-pointer"
+                      >
+                        {slides[currentSlide].cta}
+                      </Button>
+                    </Link>
+                  </motion.div>
+                </div>
+
+                {/* Right: Product Image */}
                 <motion.div 
-                  initial={{ y: 35, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.5 }}
+                  initial={{ opacity: 0, x: 60 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, duration: 0.7 }}
+                  className="hidden lg:flex items-center justify-center"
                 >
-                  <Link href={slides[currentSlide].link}>
-                    <Button 
-                      variant="primary"
-                      className="font-sans font-medium rounded-xl shadow-lg hover:shadow-brand-primary-500/25 px-8 py-6 cursor-pointer"
-                    >
-                      {slides[currentSlide].cta}
-                    </Button>
-                  </Link>
+                  <div className="relative w-full max-w-md xl:max-w-lg">
+                    <div className="absolute inset-0 bg-white/5 rounded-3xl blur-3xl" />
+                    <img
+                      src={slides[currentSlide].image}
+                      alt={slides[currentSlide].title}
+                      className="relative w-full h-auto object-contain drop-shadow-2xl rounded-2xl"
+                    />
+                  </div>
                 </motion.div>
               </div>
             </div>
@@ -203,10 +217,10 @@ export default function Home() {
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[
-            { name: "Men", tag: "men", desc: "Premium gadgets & watches", image: "/images/sunglasses_hero.jpg" },
-            { name: "Women", tag: "women", desc: "Sophisticated catalog designs", image: "/images/watches_hero.jpg" },
-            { name: "Kids", tag: "kids", desc: "Compact electronics & accessories", image: "/images/gadgets_hero.jpg" },
-            { name: "Kids", tag: "kids", desc: "Compact electronics & accessories", image: "/images/gadgets_hero.jpg" }
+            { name: "Men", tag: "men", desc: "Premium fashion & accessories", image: "/images/sunglasses_hero.jpg" },
+            { name: "Women", tag: "women", desc: "Elegant styles & luxury pieces", image: "/images/watches_hero.jpg" },
+            { name: "Gaming", tag: "gaming", desc: "High-performance gear & consoles", image: "/images/ps7.jpeg" },
+            { name: "Gadgets", tag: "gadgets", desc: "Innovative tech & smart devices", image: "/images/drone.jpeg" }
           ].map((cat, idx) => (
             <Link key={idx} href={`/shop?category=${cat.tag}`} className="group relative h-80 rounded-2xl overflow-hidden shadow-md">
               <div 
@@ -375,32 +389,34 @@ export default function Home() {
       </section>
 
       {/* SECTION 7: NEWSLETTER SUBSCRIPTION PANEL */}
-      <section className=" mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 w-full text-center">
-        <div className="  p-8 sm:p-12 rounded-3xl border border-border-accent bg-background shadow-md">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-primary-500/10 text-brand-primary-600 dark:text-brand-primary-400 mx-auto mb-4">
-            <FiMail size={22} />
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 w-full text-center ">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-brand-primary-700 to-brand-secondary-700 p-0.5 shadow-xl">
+          <div className="rounded-3xl  p-8 sm:p-12">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-primary-500/50  mx-auto mb-4">
+              <FiMail size={22} className="text-white" />
+            </div>
+            <h3 className="font-display text-2xl font-bold text-white mb-2">Subscribe to our Newsletter</h3>
+            <p className="font-sans text-xs text-white/60 mb-6">
+              Get the latest notifications on price drops, limited variations, and fresh arrivals delivered straight to your inbox.
+            </p>
+            
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <Input
+                type="email"
+                placeholder="Enter your email address"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                className="font-sans flex-1"
+              />
+              <Button
+                type="submit"
+                variant="secondary"
+                className="font-sans font-semibold rounded-xl cursor-pointer py-6"
+              >
+                Subscribe
+              </Button>
+            </form>
           </div>
-          <h3 className="font-display text-2xl font-bold text-foreground mb-2">Subscribe to our Newsletter</h3>
-          <p className="font-sans text-xs text-foreground/60 mb-6">
-            Get the latest notifications on price drops, limited variations, and fresh arrivals delivered straight to your inbox.
-          </p>
-          
-          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <Input
-              type="email"
-              placeholder="Enter your email address"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              className="font-sans flex-1"
-            />
-            <Button
-              type="submit"
-              variant="secondary"
-              className="font-sans font-semibold rounded-xl cursor-pointer py-6"
-            >
-              Subscribe
-            </Button>
-          </form>
         </div>
       </section>
 

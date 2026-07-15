@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "@/lib/store/slices/cartSlice";
 import { toggleWishlist } from "@/lib/store/slices/wishlistSlice";
+import { syncAddToWishlist, syncRemoveFromWishlist } from "@/lib/api/wishlist";
 import { RootState } from "@/lib/store";
 import { Button } from "@heroui/react";
 import { 
@@ -36,6 +37,7 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
   const [activeTab, setActiveTab] = useState<TabType>("description");
 
   // Fetch wishlist state from store
+  const { isAuthenticated } = useSelector((state: RootState) => state.user);
   const wishlistItems = useSelector((state: RootState) => state.wishlist.items || []);
   const isWishlisted = wishlistItems.some((item) => item.product === product._id);
 
@@ -83,6 +85,15 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
         image: product.images[0] || "",
       })
     );
+
+    if (isAuthenticated) {
+      if (isWishlisted) {
+        syncRemoveFromWishlist(product._id).catch(() => {});
+      } else {
+        syncAddToWishlist(product._id).catch(() => {});
+      }
+    }
+
     if (isWishlisted) {
       toast.info(`Removed ${product.title} from wishlist`);
     } else {

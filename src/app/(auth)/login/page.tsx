@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/lib/store/slices/userSlice";
+import { setWishlist } from "@/lib/store/slices/wishlistSlice";
+import { store } from "@/lib/store";
 import { serverMutation } from "@/lib/core/server";
+import { syncLocalWishlistToBackend, fetchWishlistItems } from "@/lib/api/wishlist";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@heroui/react";
 import {
@@ -14,7 +17,6 @@ import {
   FiArrowRight,
   FiEye,
   FiEyeOff,
-  FiShoppingBag,
 } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "react-toastify";
@@ -100,6 +102,14 @@ export default function LoginPage() {
         data.user.image ?? ""
       );
 
+      // Sync wishlist to backend
+      try {
+        const localItems = store.getState().wishlist.items;
+        await syncLocalWishlistToBackend(localItems);
+        const serverItems = await fetchWishlistItems();
+        dispatch(setWishlist(serverItems));
+      } catch {}
+
       toast.success(`Welcome back, ${data.user.name}! 🎉`);
 
       if (syncResponse.user.role === "admin") {
@@ -143,18 +153,13 @@ export default function LoginPage() {
           <div className="pointer-events-none absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-brand-primary-400/8 blur-3xl" />
 
           {/* Header */}
-          <div className="relative text-center flex flex-col items-center gap-3">
-            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-primary-500/15 ring-1 ring-brand-primary-500/30">
-              <FiShoppingBag size={26} className="text-brand-primary-500" />
-            </div>
-            <div>
-              <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                Welcome back
-              </h1>
-              <p className="font-sans text-sm text-foreground/50 mt-1">
-                Sign in to your NextMart account
-              </p>
-            </div>
+          <div className="relative">
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+              Welcome back
+            </h1>
+            <p className="font-sans text-sm text-foreground/50 mt-1">
+              Sign in to your NextMart account
+            </p>
           </div>
 
           {/* Google Sign-In */}
@@ -194,11 +199,11 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-border-accent/60" />
-            <span className="text-xs font-sans text-foreground/40 font-medium">
-              or sign in with email
+            <div className="flex-1 h-px bg-foreground/15" />
+            <span className="text-xs font-sans text-foreground/40 font-medium uppercase tracking-wide">
+              or
             </span>
-            <div className="flex-1 h-px bg-border-accent/60" />
+            <div className="flex-1 h-px bg-foreground/15" />
           </div>
 
           {/* Email/Password Form */}
@@ -311,6 +316,47 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+
+          {/* Quick login buttons */}
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 h-px bg-foreground/15" />
+              <span className="text-xs font-sans text-foreground/40 font-medium uppercase tracking-wide">
+                quick login
+              </span>
+              <div className="flex-1 h-px bg-foreground/15" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail("t.customer@nm.com");
+                  setPassword("ixWxv3..XC@Mq2c");
+                  setTimeout(() => {
+                    const form = document.querySelector("form");
+                    form?.requestSubmit();
+                  }, 50);
+                }}
+                className="w-full h-10 rounded-xl border border-border-accent bg-foreground/[0.02] hover:bg-brand-primary-500/10 hover:border-brand-primary-500/30 font-sans text-sm font-semibold text-foreground/70 hover:text-brand-primary-600 dark:hover:text-brand-primary-400 transition-all duration-200 cursor-pointer"
+              >
+                Sign Customer
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail("t.admin@nm.com");
+                  setPassword("ixWxv3..XC@Mq2c");
+                  setTimeout(() => {
+                    const form = document.querySelector("form");
+                    form?.requestSubmit();
+                  }, 50);
+                }}
+                className="w-full h-10 rounded-xl border border-border-accent bg-foreground/[0.02] hover:bg-amber-500/10 hover:border-amber-500/30 font-sans text-sm font-semibold text-foreground/70 hover:text-amber-600 dark:hover:text-amber-400 transition-all duration-200 cursor-pointer"
+              >
+                Sign Admin
+              </button>
+            </div>
+          </div>
 
           {/* Footer link */}
           <p className="text-center text-sm font-sans text-foreground/50">

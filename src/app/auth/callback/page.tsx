@@ -3,9 +3,12 @@
 import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
+import { store } from "@/lib/store";
 import { setUser } from "@/lib/store/slices/userSlice";
+import { setWishlist } from "@/lib/store/slices/wishlistSlice";
 import { serverMutation } from "@/lib/core/server";
 import { authClient } from "@/lib/auth-client";
+import { syncLocalWishlistToBackend, fetchWishlistItems } from "@/lib/api/wishlist";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
@@ -68,6 +71,16 @@ export default function AuthCallbackPage() {
             token: response.token,
           })
         );
+
+        // Sync local wishlist to backend and replace with server state
+        try {
+          const localItems = store.getState().wishlist.items;
+          await syncLocalWishlistToBackend(localItems);
+          const serverItems = await fetchWishlistItems();
+          dispatch(setWishlist(serverItems));
+        } catch {
+          // Non-blocking
+        }
 
         toast.success(`Welcome, ${response.user.name}! 🎉`);
 
