@@ -191,10 +191,11 @@ export default function Home() {
           <p className="font-sans text-sm text-foreground/60">Tailored inventory curated across specialized e-commerce collections.</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[
             { name: "Men", tag: "men", desc: "Premium gadgets & watches", image: "/images/sunglasses_hero.jpg" },
             { name: "Women", tag: "women", desc: "Sophisticated catalog designs", image: "/images/watches_hero.jpg" },
+            { name: "Kids", tag: "kids", desc: "Compact electronics & accessories", image: "/images/gadgets_hero.jpg" },
             { name: "Kids", tag: "kids", desc: "Compact electronics & accessories", image: "/images/gadgets_hero.jpg" }
           ].map((cat, idx) => (
             <Link key={idx} href={`/shop?category=${cat.tag}`} className="group relative h-80 rounded-2xl overflow-hidden shadow-md">
@@ -220,10 +221,11 @@ export default function Home() {
             <p className="font-sans text-sm text-foreground/60">Take a look at this season's featured premium releases.</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { title: "Aviator Gold", price: "$149.00", original: "$199.00", tag: "sunglasses", img: "/images/sunglasses_hero.jpg" },
               { title: "Sport Chronograph", price: "$299.00", original: "$399.00", tag: "watches", img: "/images/watches_hero.jpg" },
+              { title: "True Wireless Earbuds", price: "$89.00", original: "$129.00", tag: "gadgets", img: "/images/gadgets_hero.jpg" },
               { title: "True Wireless Earbuds", price: "$89.00", original: "$129.00", tag: "gadgets", img: "/images/gadgets_hero.jpg" }
             ].map((prod, idx) => (
               <div key={idx} className="group flex flex-col rounded-2xl bg-background border border-border-accent overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -301,7 +303,7 @@ export default function Home() {
 
       {/* SECTION 6: FAQ ACCORDION */}
       <section className="bg-card-bg border-y border-border-accent">
-        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 w-full">
+        <div className="mx-auto max-w-3xl py-16 w-full">
           <div className="text-center mb-10">
             <h2 className="font-display text-3xl font-extrabold text-foreground mb-2">Frequently Asked Questions</h2>
             <p className="font-sans text-sm text-foreground/60">Everything you need to know about NextMart catalog orders.</p>
@@ -352,8 +354,8 @@ export default function Home() {
       </section>
 
       {/* SECTION 7: NEWSLETTER SUBSCRIPTION PANEL */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 w-full text-center">
-        <div className="max-w-2xl mx-auto p-8 sm:p-12 rounded-3xl border border-border-accent bg-background shadow-md">
+      <section className=" mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 w-full text-center">
+        <div className="  p-8 sm:p-12 rounded-3xl border border-border-accent bg-background shadow-md">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-primary-500/10 text-brand-primary-600 dark:text-brand-primary-400 mx-auto mb-4">
             <FiMail size={22} />
           </div>
