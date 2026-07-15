@@ -2,6 +2,6 @@
 
 import AddProductForm from "@/components/admin/AddProductForm";
 
-export default function AddProductPage() {
+export default function AdminAddProductPage() {
   return <AddProductForm />;
 }

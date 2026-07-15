@@ -2,6 +2,6 @@
 
 import ManageProducts from "@/components/admin/ManageProducts";
 
-export default function ManageProductsPage() {
+export default function AdminManageProductsPage() {
   return <ManageProducts />;
 }

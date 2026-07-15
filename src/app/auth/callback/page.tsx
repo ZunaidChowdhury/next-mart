@@ -72,7 +72,7 @@ export default function AuthCallbackPage() {
         toast.success(`Welcome, ${response.user.name}! 🎉`);
 
         if (response.user.role === "admin") {
-          router.replace("/items/manage");
+          router.replace("/dashboard/admin");
         } else {
           router.replace("/dashboard/buyer");
         }

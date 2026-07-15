@@ -288,7 +288,7 @@ export default function BuyerDashboardPage() {
       return;
     }
     if (role === "admin") {
-      router.push("/items/manage");
+      router.push("/dashboard/admin");
       return;
     }
     setAuthChecked(true);

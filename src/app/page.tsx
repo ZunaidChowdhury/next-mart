@@ -15,6 +15,8 @@ import {
   FiChevronDown,
   FiMail
 } from "react-icons/fi";
+import { fetchFeaturedProducts } from "@/lib/api/product";
+import type { IProductItem } from "@/lib/api/product";
 
 // Slider slides mock data
 const slides = [
@@ -64,6 +66,7 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [emailInput, setEmailInput] = useState("");
+  const [featuredProducts, setFeaturedProducts] = useState<IProductItem[]>([]);
   
   // Auto-rotate hero slider slides
   useEffect(() => {
@@ -71,6 +74,13 @@ export default function Home() {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 6000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Fetch featured products (positions 1-8)
+  useEffect(() => {
+    fetchFeaturedProducts()
+      .then((data) => setFeaturedProducts(data.products))
+      .catch(() => setFeaturedProducts([]));
   }, []);
 
   const handleNextSlide = () => {
@@ -221,41 +231,52 @@ export default function Home() {
             <p className="font-sans text-sm text-foreground/60">Take a look at this season's featured premium releases.</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { title: "Aviator Gold", price: "$149.00", original: "$199.00", tag: "sunglasses", img: "/images/sunglasses_hero.jpg" },
-              { title: "Sport Chronograph", price: "$299.00", original: "$399.00", tag: "watches", img: "/images/watches_hero.jpg" },
-              { title: "True Wireless Earbuds", price: "$89.00", original: "$129.00", tag: "gadgets", img: "/images/gadgets_hero.jpg" },
-              { title: "True Wireless Earbuds", price: "$89.00", original: "$129.00", tag: "gadgets", img: "/images/gadgets_hero.jpg" }
-            ].map((prod, idx) => (
-              <div key={idx} className="group flex flex-col rounded-2xl bg-background border border-border-accent overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <div className="relative h-60 overflow-hidden bg-zinc-100">
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center group-hover:scale-102 transition-transform duration-500"
-                    style={{ backgroundImage: `url(${prod.img})` }}
-                  />
-                  <span className="absolute top-4 left-4 bg-brand-primary-500 text-white font-sans text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                    Sale
-                  </span>
-                </div>
-                <div className="p-5 flex flex-col flex-1">
-                  <span className="font-sans text-[10px] text-brand-primary-500 font-bold uppercase mb-1">{prod.tag}</span>
-                  <h4 className="font-display text-lg font-bold text-foreground mb-2 group-hover:text-brand-primary-500 transition-colors">
-                    {prod.title}
-                  </h4>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="font-sans text-base font-bold text-foreground">{prod.price}</span>
-                    <span className="font-sans text-xs text-foreground/45 line-through">{prod.original}</span>
+          {featuredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((prod) => (
+                <div key={prod._id} className="group flex flex-col rounded-2xl bg-background border border-border-accent overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <div className="relative h-60 overflow-hidden bg-zinc-100">
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center group-hover:scale-102 transition-transform duration-500"
+                      style={{ backgroundImage: `url(${prod.images[0] || "/images/placeholder.jpg"})` }}
+                    />
+                    {prod.originalPrice > prod.salePrice && (
+                      <span className="absolute top-4 left-4 bg-brand-primary-500 text-white font-sans text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        Sale
+                      </span>
+                    )}
                   </div>
-                  <Link href={`/shop`} className="mt-auto">
-                    <Button variant="secondary" className="w-full font-sans font-medium rounded-xl cursor-pointer">
-                      View Catalog
-                    </Button>
-                  </Link>
+                  <div className="p-5 flex flex-col flex-1">
+                    <span className="font-sans text-[10px] text-brand-primary-500 font-bold uppercase mb-1">
+                      {prod.categories[0] || "General"}
+                    </span>
+                    <h4 className="font-display text-lg font-bold text-foreground mb-2 group-hover:text-brand-primary-500 transition-colors">
+                      {prod.title}
+                    </h4>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="font-sans text-base font-bold text-foreground">
+                        ${prod.salePrice.toFixed(2)}
+                      </span>
+                      {prod.originalPrice > prod.salePrice && (
+                        <span className="font-sans text-xs text-foreground/45 line-through">
+                          ${prod.originalPrice.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                    <Link href={`/shop/${prod._id}`} className="mt-auto">
+                      <Button variant="secondary" className="w-full font-sans font-medium rounded-xl cursor-pointer">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center font-sans text-sm text-foreground/50 py-8">
+              No featured products yet.
+            </p>
+          )}
         </div>
       </section>
 
@@ -281,7 +302,7 @@ export default function Home() {
 
       {/* SECTION 5: PROMOTIONAL GRADIENT BANNER */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 w-full">
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-brand-primary-700 to-indigo-900 text-white p-8 md:p-12 shadow-xl">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-brand-primary-700 to-brand-secondary-700 text-white p-8 md:p-12 shadow-xl">
           <div 
             className="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-overlay"
             style={{ backgroundImage: `url('/images/gadgets_hero.jpg')` }}

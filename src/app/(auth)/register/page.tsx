@@ -130,7 +130,7 @@ export default function RegisterPage() {
       toast.success(`Welcome to NextMart, ${data.user.name}! 🎉`);
 
       if (syncResponse.user.role === "admin") {
-        router.push("/items/manage");
+        router.push("/dashboard/admin");
       } else {
         router.push("/dashboard/buyer");
       }
