@@ -75,3 +75,13 @@ export async function fetchProducts(params: GetProductsParams = {}): Promise<Pro
 export async function fetchProductById(id: string): Promise<{ product: IProductItem }> {
   return serverFetch<{ product: IProductItem }>(`/products/${id}`);
 }
+
+// ── Admin-only: fetch all products including isPrivate:true with no pagination ──
+export interface AdminProductsResponse {
+  products: IProductItem[];
+  totalProducts: number;
+}
+
+export async function fetchAllProducts(): Promise<AdminProductsResponse> {
+  return serverFetch<AdminProductsResponse>(`/products/admin/all`);
+}
