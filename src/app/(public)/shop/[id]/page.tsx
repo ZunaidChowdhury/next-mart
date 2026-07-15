@@ -8,7 +8,7 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export const revalidate = 300; // Enable 5-minute ISR revalidation for product pages
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;

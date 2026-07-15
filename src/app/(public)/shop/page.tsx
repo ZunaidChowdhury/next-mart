@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import ShopCatalog from "./ShopCatalog";
 import SkeletonLoader from "@/components/product/SkeletonLoader";
 
-export const revalidate = 300; // Enable ISR revalidation on this route segment (Server-Side compatible)
+export const dynamic = 'force-dynamic';
 
 export default function Shop() {
   return (
