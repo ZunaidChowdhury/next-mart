@@ -8,6 +8,7 @@ export interface GetProductsParams {
   maxPrice?: number;
   rating?: number;
   sortBy?: string;
+  featured?: boolean;
 }
 
 export interface IFeature {
@@ -45,6 +46,7 @@ export interface IProductItem {
   categories: string[];
   isPrivate: boolean;
   stockCount: number;
+  featuredPosition: number | null;
   coreFeatures: IFeature[];
   specification: ISpecification[];
   reviews: IReview[];
@@ -66,10 +68,15 @@ export async function fetchProducts(params: GetProductsParams = {}): Promise<Pro
   if (params.maxPrice) queryParams.set("maxPrice", params.maxPrice.toString());
   if (params.rating) queryParams.set("rating", params.rating.toString());
   if (params.sortBy) queryParams.set("sortBy", params.sortBy);
+  if (params.featured) queryParams.set("featured", "true");
 
   const queryString = queryParams.toString();
   const endpoint = `/products${queryString ? `?${queryString}` : ""}`;
   return serverFetch<ProductsResponse>(endpoint);
+}
+
+export async function fetchFeaturedProducts(): Promise<{ products: IProductItem[] }> {
+  return serverFetch<{ products: IProductItem[] }>("/products/featured");
 }
 
 export async function fetchProductById(id: string): Promise<{ product: IProductItem }> {

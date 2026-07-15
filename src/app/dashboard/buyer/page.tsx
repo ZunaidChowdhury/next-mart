@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store";
 import { fetchTransactionHistory, TransactionRecord } from "@/lib/api/transaction";
 import { addToCart } from "@/lib/store/slices/cartSlice";
 import { removeFromWishlist } from "@/lib/store/slices/wishlistSlice";
+import { syncRemoveFromWishlist } from "@/lib/api/wishlist";
 import { Button } from "@heroui/react";
 import {
   FiPackage,
@@ -261,11 +262,12 @@ function OrderCard({ order, index }: { order: TransactionRecord; index: number }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-type Tab = "orders" | "wishlist";
+type Tab = "orders" | "purchased" | "wishlist";
 
 export default function BuyerDashboardPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const searchParams = useSearchParams();
 
   const { isAuthenticated, role, email, name } = useSelector(
     (state: RootState) => state.user
@@ -274,7 +276,8 @@ export default function BuyerDashboardPage() {
     (state: RootState) => state.wishlist.items || []
   );
 
-  const [activeTab, setActiveTab] = useState<Tab>("orders");
+  const initialTab = (searchParams.get("tab") as Tab) || "orders";
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [orders, setOrders] = useState<TransactionRecord[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [ordersError, setOrdersError] = useState<string | null>(null);
@@ -288,7 +291,7 @@ export default function BuyerDashboardPage() {
       return;
     }
     if (role === "admin") {
-      router.push("/items/manage");
+      router.push("/dashboard/admin");
       return;
     }
     setAuthChecked(true);
@@ -331,6 +334,7 @@ export default function BuyerDashboardPage() {
 
   const handleRemoveFromWishlist = (productId: string, title: string) => {
     dispatch(removeFromWishlist(productId));
+    syncRemoveFromWishlist(productId).catch(() => {});
     toast.info(`"${title}" removed from wishlist.`);
   };
 
@@ -381,6 +385,7 @@ export default function BuyerDashboardPage() {
           {(
             [
               { key: "orders", label: "Orders", icon: FiPackage },
+              { key: "purchased", label: "Purchase History", icon: FiArchive },
               { key: "wishlist", label: "Wishlist", icon: FiHeart },
             ] as { key: Tab; label: string; icon: React.ElementType }[]
           ).map(({ key, label, icon: Icon }) => (
@@ -404,6 +409,11 @@ export default function BuyerDashboardPage() {
               {key === "orders" && !isLoadingOrders && orders.length > 0 && (
                 <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary-100 dark:bg-brand-primary-900/40 text-[10px] font-bold text-brand-primary-600 dark:text-brand-primary-400">
                   {orders.length}
+                </span>
+              )}
+              {key === "purchased" && !isLoadingOrders && orders.length > 0 && (
+                <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary-100 dark:bg-brand-primary-900/40 text-[10px] font-bold text-brand-primary-600 dark:text-brand-primary-400">
+                  {orders.reduce((sum, o) => sum + o.items.length, 0)}
                 </span>
               )}
             </button>
@@ -458,6 +468,99 @@ export default function BuyerDashboardPage() {
                 <div className="flex flex-col gap-5">
                   {orders.map((order, index) => (
                     <OrderCard key={order._id} order={order} index={index} />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Purchase History Tab */}
+          {activeTab === "purchased" && (
+            <motion.div
+              key="purchased"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
+            >
+              {isLoadingOrders ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-foreground/10 border-t-brand-primary-500" />
+                  <p className="font-sans text-sm text-foreground/50 animate-pulse">
+                    Loading purchase history...
+                  </p>
+                </div>
+              ) : ordersError || orders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4 rounded-2xl border border-dashed border-border-accent">
+                  <div className="h-16 w-16 rounded-full bg-foreground/5 flex items-center justify-center text-foreground/30">
+                    <FiArchive size={30} />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-display text-lg font-bold text-foreground/60">
+                      No Purchase History
+                    </p>
+                    <p className="font-sans text-sm text-foreground/40 mt-1">
+                      Items you buy will show up here.
+                    </p>
+                  </div>
+                  <Link href="/shop">
+                    <Button
+                      variant="primary"
+                      className="font-sans font-semibold rounded-xl cursor-pointer mt-2 flex items-center gap-2"
+                    >
+                      <FiShoppingCart size={15} />
+                      Browse the Shop
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {orders.flatMap((order) =>
+                    order.items.map((item) => ({
+                      ...item,
+                      transactionId: order.transactionId,
+                      paymentStatus: order.paymentStatus,
+                      orderDate: order.createdAt,
+                    }))
+                  ).map((entry, index) => (
+                    <motion.div
+                      key={`${entry.transactionId}-${entry.product}-${index}`}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: index * 0.03 }}
+                      className="flex items-center gap-4 rounded-2xl bg-card-bg border border-border-accent shadow-sm p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-brand-primary-500/10 text-brand-primary-500">
+                        <FiPackage size={20} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/shop/${entry.product}`}
+                          className="font-display text-base font-bold text-foreground truncate hover:text-brand-primary-600 dark:hover:text-brand-primary-400 transition-colors"
+                        >
+                          {entry.title}
+                        </Link>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs font-sans text-foreground/50">
+                          <span className="flex items-center gap-1">
+                            <FiDollarSign size={11} />
+                            ${entry.price.toFixed(2)}
+                          </span>
+                          <span>x{entry.quantity}</span>
+                          <span className="flex items-center gap-1">
+                            <FiCalendar size={11} />
+                            {new Date(entry.orderDate).toLocaleDateString("en-US", {
+                              month: "short", day: "numeric", year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <StatusChip status={entry.paymentStatus} />
+                        <span className="font-mono text-[10px] text-foreground/40 max-w-[80px] truncate hidden sm:inline" title={entry.transactionId}>
+                          {entry.transactionId.slice(0, 12)}...
+                        </span>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
               )}

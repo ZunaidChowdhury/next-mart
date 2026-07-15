@@ -18,7 +18,7 @@ export default function DashboardPage() {
     }
 
     if (role === "admin") {
-      router.push("/items/manage");
+      router.push("/dashboard/admin");
     } else {
       router.push("/dashboard/buyer");
     }

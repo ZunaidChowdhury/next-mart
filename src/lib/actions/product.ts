@@ -15,6 +15,7 @@ export interface CreateProductPayload {
   specification?: Array<{ name: string; value: string }>;
   stockCount: number;
   isPrivate?: boolean;
+  featuredPosition?: number | null;
 }
 
 export interface CreateProductResponse {
@@ -46,6 +47,7 @@ export interface UpdateProductPayload {
   specification?: Array<{ name: string; value: string }>;
   stockCount?: number;
   isPrivate?: boolean;
+  featuredPosition?: number | null;
 }
 
 export interface UpdateProductResponse {

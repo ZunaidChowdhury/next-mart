@@ -21,7 +21,7 @@ const CATEGORIES_LIST = [
   { label: "Watches", value: "watches" },
   { label: "Men", value: "men" },
   { label: "Women", value: "women" },
-  { label: "Kids", value: "kids" },
+  { label: "Gaming", value: "gaming" },
 ];
 
 const SORT_OPTIONS = [

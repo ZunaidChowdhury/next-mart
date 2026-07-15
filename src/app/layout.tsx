@@ -3,6 +3,7 @@ import { Outfit, Inter } from "next/font/google";
 import { Providers } from "./providers";
 import Navbar from "@/components/common/Navbar";
 import "./globals.css";
+import Footer from "@/components/common/Footer";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
         <Providers>
           <Navbar />
           {children}
+          <Footer />
         </Providers>
       </body>
     </html>

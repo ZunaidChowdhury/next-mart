@@ -2,10 +2,13 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store";
 import { clearUser } from "@/lib/store/slices/userSlice";
+import { clearCart } from "@/lib/store/slices/cartSlice";
+import { clearWishlist } from "@/lib/store/slices/wishlistSlice";
 import { authClient } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiUser, FiLogOut } from "react-icons/fi";
@@ -35,6 +38,8 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     try {
       await authClient.signOut();
       dispatch(clearUser());
+      dispatch(clearCart());
+      dispatch(clearWishlist());
       toast.success("Signed out successfully");
       onClose();
       router.push("/");
@@ -53,7 +58,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm min-[981px]:hidden"
           />
 
           {/* Slide-In Drawer Panel */}
@@ -62,7 +67,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 220 }}
-            className="fixed inset-y-0 left-0 z-50 w-72 bg-card-bg border-r border-border-accent p-6 shadow-2xl flex flex-col justify-between md:hidden"
+            className="fixed inset-y-0 left-0 z-50 w-72 bg-card-bg border-r border-border-accent p-6 shadow-2xl flex flex-col justify-between min-[981px]:hidden"
           >
             {/* Header Block */}
             <div>
@@ -70,9 +75,19 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                 <Link 
                   href="/" 
                   onClick={onClose}
-                  className="font-display text-2xl font-bold tracking-tight text-brand-primary-600 dark:text-brand-primary-400"
+                  className="flex items-center gap-2 shrink-0"
                 >
-                  NextMart
+                  <Image
+                    src="/images/NextMart.png"
+                    alt="NextMart"
+                    width={24}
+                    height={24}
+                    className="h-6 w-6 object-contain"
+                    priority
+                  />
+                  <span className="font-display text-xl font-extrabold tracking-tight text-foreground whitespace-nowrap">
+                    Next<span className="text-brand-primary-500">Mart</span>
+                  </span>
                 </Link>
                 <button 
                   onClick={onClose}
@@ -91,7 +106,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                       key={link.href}
                       href={link.href}
                       onClick={onClose}
-                      className={`font-sans text-lg font-medium transition-colors hover:text-brand-primary-500 py-1 ${
+                      className={`font-sans text-lg font-medium transition-colors hover:bg-brand-primary-500/30 hover:text-brand-primary-600 dark:hover:text-brand-primary-400 px-3 py-2 rounded-xl ${
                         isActive 
                           ? "text-brand-primary-600 dark:text-brand-primary-400 font-semibold" 
                           : "text-foreground/70"
@@ -130,14 +145,14 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                     <Link 
                       href="/dashboard" 
                       onClick={onClose} 
-                      className="text-center font-sans text-sm font-semibold text-brand-primary-600 dark:text-brand-primary-400 bg-brand-primary-500/10 hover:bg-brand-primary-500/20 py-2.5 rounded-xl transition-colors"
+                      className="text-left font-sans text-sm font-semibold text-brand-primary-600 dark:text-brand-primary-400 bg-brand-primary-500/10 hover:bg-brand-primary-500/30 py-2.5 px-3 rounded-xl transition-colors"
                     >
                       Dashboard Portal
                     </Link>
                     
                     <button
                       onClick={handleSignOut}
-                      className="flex items-center justify-center gap-2 w-full font-sans text-sm font-semibold text-danger bg-danger/10 hover:bg-danger/20 py-2.5 rounded-xl transition-colors cursor-pointer"
+                      className="flex items-center justify-start gap-2 w-full font-sans text-sm font-semibold text-danger bg-danger/10 hover:bg-danger/20 py-2.5 px-3 rounded-xl transition-colors cursor-pointer"
                     >
                       <FiLogOut size={16} />
                       <span>Sign Out</span>
