@@ -17,6 +17,7 @@ import {
 } from "react-icons/fi";
 import { fetchFeaturedProducts } from "@/lib/api/product";
 import type { IProductItem } from "@/lib/api/product";
+import ProductCard from "@/components/product/ProductCard";
 
 // Slider slides mock data
 const slides = [
@@ -248,42 +249,7 @@ export default function Home() {
           {featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.map((prod) => (
-                <div key={prod._id} className="group flex flex-col rounded-2xl bg-background border border-border-accent overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <div className="relative h-60 overflow-hidden bg-zinc-100">
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center group-hover:scale-102 transition-transform duration-500"
-                      style={{ backgroundImage: `url(${prod.images[0] || "/images/placeholder.jpg"})` }}
-                    />
-                    {prod.originalPrice > prod.salePrice && (
-                      <span className="absolute top-4 left-4 bg-brand-primary-500 text-white font-sans text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        Sale
-                      </span>
-                    )}
-                  </div>
-                  <div className="p-5 flex flex-col flex-1">
-                    <span className="font-sans text-[10px] text-brand-primary-500 font-bold uppercase mb-1">
-                      {prod.categories[0] || "General"}
-                    </span>
-                    <h4 className="font-display text-lg font-bold text-foreground mb-2 group-hover:text-brand-primary-500 transition-colors">
-                      {prod.title}
-                    </h4>
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="font-sans text-base font-bold text-foreground">
-                        ${prod.salePrice.toFixed(2)}
-                      </span>
-                      {prod.originalPrice > prod.salePrice && (
-                        <span className="font-sans text-xs text-foreground/45 line-through">
-                          ${prod.originalPrice.toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-                    <Link href={`/shop/${prod._id}`} className="mt-auto">
-                      <Button variant="secondary" className="w-full font-sans font-medium rounded-xl cursor-pointer">
-                        View Details
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
+                <ProductCard key={prod._id} product={prod} />
               ))}
             </div>
           ) : (

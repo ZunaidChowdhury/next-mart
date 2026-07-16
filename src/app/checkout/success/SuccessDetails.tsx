@@ -176,8 +176,8 @@ export default function SuccessDetails() {
             <hr className="border-border-accent/20" />
             <div className="flex flex-col gap-4 font-sans">
               {details.items.length === 0 ? (
-                <div className="py-4 text-center text-foreground/50">
-                  Placeholder [DataLoadFailed]
+                <div className="py-4 text-center text-foreground/50 font-sans text-sm">
+                  No items found for this order.
                 </div>
               ) : (
                 details.items.map((item) => (

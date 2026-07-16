@@ -28,6 +28,7 @@ import {
   FiEyeOff,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
+import EmptyState from "@/components/common/EmptyState";
 import { toast } from "react-toastify";
 
 const AVAILABLE_CATEGORIES = [
@@ -250,10 +251,10 @@ export default function ManageProducts() {
           ))}
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4 text-foreground/40">
-          <FiPackage size={48} />
-          <p className="font-sans text-sm font-medium">Placeholder [DataLoadFailed]</p>
-        </div>
+        <EmptyState
+          title="No products match your search"
+          description="Try a different search term or adjust the visibility filter above."
+        />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border-accent/40 bg-card-bg shadow-sm">
           <table className="w-full text-sm font-sans">

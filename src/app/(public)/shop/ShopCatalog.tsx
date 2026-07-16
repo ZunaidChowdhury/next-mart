@@ -6,6 +6,7 @@ import { fetchProducts, IProductItem } from "@/lib/api/product";
 import ProductCard from "@/components/product/ProductCard";
 import SkeletonLoader from "@/components/product/SkeletonLoader";
 import { Button } from "@heroui/react";
+import EmptyState from "@/components/common/EmptyState";
 import { 
   FiSearch, 
   FiStar, 
@@ -316,9 +317,10 @@ export default function ShopCatalog() {
             </div>
           </div>
         ) : error || products.length === 0 ? (
-          <div className="w-full text-center py-24 font-sans text-foreground/50 border border-dashed border-border-accent rounded-2xl bg-card-bg">
-            Placeholder [DataLoadFailed]
-          </div>
+          <EmptyState
+            title="No products found"
+            description="Try adjusting your search or filter criteria to discover more items."
+          />
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">

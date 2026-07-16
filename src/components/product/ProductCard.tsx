@@ -20,7 +20,7 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { isAuthenticated, email } = useSelector((state: RootState) => state.user);
+  const { isAuthenticated, email, role } = useSelector((state: RootState) => state.user);
   const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
   const isInWishlist = wishlistItems.some((item) => item.product === product._id);
 
@@ -105,14 +105,14 @@ export default function ProductCard({ product }: ProductCardProps) {
         </button>
 
         {/* Edit button — only visible to the product owner */}
-        {email && product.addedBy === email && (
+        {(role === "admin" || (email && product.addedBy === email)) && (
           <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               router.push(`/dashboard/admin/items/edit/${product._id}`);
             }}
-            className="absolute top-3 left-3 flex items-center justify-center h-8 w-8 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+            className="absolute bottom-3 right-3 flex items-center justify-center h-8 w-8 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
             aria-label="Edit product"
           >
             <FiEdit2 size={15} />

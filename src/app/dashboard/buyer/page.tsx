@@ -450,7 +450,7 @@ export default function BuyerDashboardPage() {
                     </p>
                     <p className="font-sans text-sm text-foreground/40 mt-1">
                       {ordersError === "Placeholder [DataLoadFailed]"
-                        ? "Placeholder [DataLoadFailed]"
+                        ? "Could not load your order history. Please try again later."
                         : "Your completed orders will appear here."}
                     </p>
                   </div>
@@ -586,7 +586,7 @@ export default function BuyerDashboardPage() {
                       Wishlist is Empty
                     </p>
                     <p className="font-sans text-sm text-foreground/40 mt-1">
-                      Placeholder [DataLoadFailed]
+                      Save your favorite items here for quick access later.
                     </p>
                   </div>
                   <Link href="/shop">
