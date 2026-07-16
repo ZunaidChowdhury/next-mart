@@ -469,6 +469,22 @@ export default function ManageProducts() {
                           isIconOnly
                           size="sm"
                           variant="ghost"
+<<<<<<< Updated upstream
+=======
+                          onPress={() => handleToggleVisibility(product)}
+                          className={`rounded-lg cursor-pointer ${
+                            product.isPrivate
+                              ? "text-foreground/40 hover:text-foreground/70"
+                              : "text-success hover:text-success/80"
+                          }`}
+                        >
+                          {product.isPrivate ? <FiEyeOff size={15} /> : <FiEye size={15} />}
+                        </Button>
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="ghost"
+>>>>>>> Stashed changes
                           onPress={() => handleOpenEdit(product)}
                           className="text-foreground/60 hover:text-brand-primary-500 rounded-lg cursor-pointer"
                         >
