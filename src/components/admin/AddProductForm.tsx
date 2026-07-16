@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
-import { createProduct } from "@/lib/actions/product";
+import { createProduct, updateProduct } from "@/lib/actions/product";
+import { fetchProductById, IProductItem } from "@/lib/api/product";
 import { UploadDropzone } from "@/lib/uploadthing";
 import { Button } from "@heroui/react";
 import { FiPlus, FiTrash, FiUploadCloud, FiLock } from "react-icons/fi";
@@ -31,14 +32,17 @@ const labelCls = "block text-xs font-bold text-foreground/75 font-sans mb-1";
 const cardCls =
   "p-6 bg-card-bg border border-border-accent/40 rounded-2xl shadow-sm flex flex-col gap-6";
 
-export default function AddProductForm() {
+export default function AddProductForm({ productId }: { productId?: string }) {
   const router = useRouter();
   const { isAuthenticated, role } = useSelector(
     (state: RootState) => state.user
   );
 
+  const isEditMode = !!productId;
+
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
 
   const [title, setTitle] = useState("");
   const [model, setModel] = useState("");
@@ -68,11 +72,49 @@ export default function AddProductForm() {
   useEffect(() => {
     if (!isAuthenticated) {
       toast.warn("Authentication required. Redirecting to login...");
-      router.push("/login?redirect=/dashboard/admin/items/add");
+      router.push(`/login?redirect=/dashboard/admin/items/${isEditMode ? `edit/${productId}` : 'add'}`);
       return;
     }
     setCheckingAuth(false);
-  }, [isAuthenticated, role, router]);
+  }, [isAuthenticated, role, router, isEditMode, productId]);
+
+  useEffect(() => {
+    if (!isEditMode || !productId || checkingAuth) return;
+    const loadProduct = async () => {
+      setIsLoadingEdit(true);
+      try {
+        const { product } = await fetchProductById(productId);
+        setTitle(product.title);
+        setBrandName(product.brandName);
+        setModel(product.model || "");
+        setOverview(product.overview);
+        setDescription(product.description);
+        setOriginalPrice(product.originalPrice.toString());
+        setSalePrice(product.salePrice.toString());
+        setStockCount(product.stockCount.toString());
+        setIsPrivate(product.isPrivate);
+        setSelectedCategories(product.categories);
+        setVariations(product.variation || []);
+        setCoreFeatures(
+          product.coreFeatures.length > 0
+            ? product.coreFeatures
+            : [{ name: "", value: "" }]
+        );
+        setSpecifications(
+          product.specification.length > 0
+            ? product.specification
+            : [{ name: "", value: "" }]
+        );
+        setUploadedImages(product.images || []);
+        setFeaturedPosition(product.featuredPosition ?? null);
+      } catch {
+        toast.error("Failed to load product data.");
+      } finally {
+        setIsLoadingEdit(false);
+      }
+    };
+    loadProduct();
+  }, [isEditMode, productId, checkingAuth]);
 
   const toggleCategory = (val: string) => {
     setSelectedCategories((prev) =>
@@ -149,7 +191,7 @@ export default function AddProductForm() {
     if (!overview.trim()) return toast.error("Product Overview is required.");
     if (!description.trim())
       return toast.error("Product Description is required.");
-    if (uploadedImages.length === 0)
+    if (!isEditMode && uploadedImages.length === 0)
       return toast.error("Upload at least one image.");
     if (selectedCategories.length === 0)
       return toast.error("Select at least one product category.");
@@ -192,14 +234,19 @@ export default function AddProductForm() {
 
     try {
       setIsSubmitting(true);
-      const response = await createProduct(payload);
-      toast.success(response.message || "Product published successfully!");
+      if (isEditMode && productId) {
+        const response = await updateProduct(productId, payload);
+        toast.success(response.message || "Product updated successfully!");
+      } else {
+        const response = await createProduct(payload);
+        toast.success(response.message || "Product published successfully!");
+      }
       router.push("/dashboard/admin/items/manage");
     } catch (err: any) {
-      console.error("Failed to create product:", err);
+      console.error("Failed to save product:", err);
       toast.error(
         err.message ||
-          "Failed to create product. Content moderation check may have failed."
+          "Failed to save product."
       );
     } finally {
       setIsSubmitting(false);
@@ -254,14 +301,22 @@ export default function AddProductForm() {
     <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 w-full flex-1 bg-background">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-          Add New Product
+          {isEditMode ? "Edit Product" : "Add New Product"}
         </h1>
         <p className="font-sans text-sm text-foreground/60 mt-1">
-          Publish products to the catalog database. All uploads undergo
-          automated keyword moderation checks.
+          {isEditMode
+            ? "Update product details in the catalog database."
+            : "Publish products to the catalog database. All uploads undergo automated keyword moderation checks."
+          }
         </p>
       </div>
 
+      {isLoadingEdit ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-foreground/10 border-t-brand-primary-500" />
+          <p className="font-sans text-sm text-foreground/60">Loading product data...</p>
+        </div>
+      ) : (
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 lg:grid-cols-3 gap-8"
@@ -722,12 +777,12 @@ export default function AddProductForm() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  <span>Publishing...</span>
+                  <span>{isEditMode ? "Updating..." : "Publishing..."}</span>
                 </span>
               ) : (
                 <>
                   <FiUploadCloud size={16} />
-                  <span>Publish Product</span>
+                  <span>{isEditMode ? "Update Product" : "Publish Product"}</span>
                 </>
               )}
             </Button>
@@ -741,7 +796,7 @@ export default function AddProductForm() {
             </Button>
           </div>
         </div>
-      </form>
+      </form>)}
     </main>
   );
 }
