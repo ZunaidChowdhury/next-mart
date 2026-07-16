@@ -50,6 +50,7 @@ export interface IProductItem {
   coreFeatures: IFeature[];
   specification: ISpecification[];
   reviews: IReview[];
+  addedBy?: string;
 }
 
 export interface ProductsResponse {
