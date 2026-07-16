@@ -26,6 +26,8 @@ import {
   FiSearch,
   FiPackage,
   FiAlertTriangle,
+  FiEye,
+  FiEyeOff,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
@@ -59,6 +61,7 @@ export default function ManageProducts() {
   const [products, setProducts] = useState<IProductItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showPrivate, setShowPrivate] = useState(true);
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingProduct, setDeletingProduct] = useState<IProductItem | null>(null);
@@ -116,14 +119,18 @@ export default function ManageProducts() {
   };
 
   const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return products;
-    const q = searchQuery.toLowerCase();
-    return products.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.brandName.toLowerCase().includes(q)
-    );
-  }, [products, searchQuery]);
+    let list = products;
+    if (!showPrivate) list = list.filter((p) => !p.isPrivate);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.brandName.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [products, searchQuery, showPrivate]);
 
   const handleToggleVisibility = async (product: IProductItem) => {
     const newPrivate = !product.isPrivate;
@@ -365,6 +372,21 @@ export default function ManageProducts() {
         />
       </div>
 
+      <div className="flex items-center gap-3 mb-4">
+        <Button
+          size="sm"
+          variant={showPrivate ? "secondary" : "outline"}
+          onPress={() => setShowPrivate(!showPrivate)}
+          className="font-sans text-xs font-semibold rounded-xl cursor-pointer flex items-center gap-1.5"
+        >
+          {showPrivate ? <FiEye size={14} /> : <FiEyeOff size={14} />}
+          {showPrivate ? "Showing All" : "Live Only"}
+        </Button>
+        <span className="text-xs text-foreground/40 font-sans">
+          {filteredProducts.length} of {products.length} shown
+        </span>
+      </div>
+
       {isLoading ? (
         <div className="flex flex-col gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -469,8 +491,6 @@ export default function ManageProducts() {
                           isIconOnly
                           size="sm"
                           variant="ghost"
-<<<<<<< Updated upstream
-=======
                           onPress={() => handleToggleVisibility(product)}
                           className={`rounded-lg cursor-pointer ${
                             product.isPrivate
@@ -484,7 +504,6 @@ export default function ManageProducts() {
                           isIconOnly
                           size="sm"
                           variant="ghost"
->>>>>>> Stashed changes
                           onPress={() => handleOpenEdit(product)}
                           className="text-foreground/60 hover:text-brand-primary-500 rounded-lg cursor-pointer"
                         >
@@ -513,439 +532,432 @@ export default function ManageProducts() {
         isOpen={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
       >
-        <Modal.Backdrop className="bg-transparent backdrop-blur-none" />
-        <Modal.Container placement="center" size="sm" className="bg-card-bg border border-border-accent shadow-2xl rounded-2xl overflow-hidden">
-          <Modal.Dialog>
-            {({ close }: { close: () => void }) => (
-              <>
-                <Modal.Header className="flex flex-col items-center gap-3 pt-8 pb-0">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                    className="flex h-16 w-16 items-center justify-center rounded-full bg-danger/10 text-danger ring-8 ring-danger/5"
-                  >
-                    <FiAlertTriangle size={30} />
-                  </motion.div>
-                  <Modal.Heading className="font-display text-xl font-bold text-foreground text-center">
-                    Delete Product
-                  </Modal.Heading>
-                </Modal.Header>
-                <Modal.Body className="px-8 py-5">
-                  <div className="text-center">
-                    <p className="font-sans text-sm text-foreground/60 leading-relaxed">
-                      This action is permanent and cannot be undone. Are you sure you want to delete
-                    </p>
-                    <p className="font-sans text-base font-bold text-foreground mt-2 px-2 py-1.5 bg-danger/5 rounded-lg border border-danger/10 inline-block">
-                      &quot;{deletingProduct?.title}&quot;
-                    </p>
-                  </div>
-                </Modal.Body>
-                <Modal.Footer className="flex gap-3 px-8 pb-8 pt-2">
-                  <Button
-                    variant="outline"
-                    onPress={close}
-                    className="flex-1 h-11 font-sans font-semibold rounded-xl border-border-accent cursor-pointer text-sm"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onPress={handleConfirmDelete}
-                    isDisabled={isDeleting}
-                    className="flex-1 h-11 font-sans font-bold rounded-xl cursor-pointer text-sm shadow-lg shadow-danger/20"
-                  >
-                    {isDeleting ? (
-                      <span className="flex items-center gap-2">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Deleting...
-                      </span>
-                    ) : (
-                      "Delete Product"
-                    )}
-                  </Button>
-                </Modal.Footer>
-                <Modal.CloseTrigger className="text-foreground/40 hover:text-foreground transition-colors top-4 right-4" />
-              </>
-            )}
-          </Modal.Dialog>
-        </Modal.Container>
+        <Modal.Backdrop className="bg-black/40 backdrop-blur-md">
+          <Modal.Container placement="center" size="md" className="bg-card-bg/95 border border-border-accent shadow-2xl rounded-2xl overflow-hidden backdrop-blur-lg">
+            <Modal.Dialog>
+              <Modal.CloseTrigger className="text-foreground/40 hover:text-foreground transition-colors top-4 right-4" />
+              <Modal.Header className="flex flex-col items-center gap-3 pt-8 pb-0">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-danger/10 text-danger ring-8 ring-danger/5"
+                >
+                  <FiAlertTriangle size={30} />
+                </motion.div>
+                <Modal.Heading className="font-display text-xl font-bold text-foreground text-center mt-2">
+                  Delete Product
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body className="px-8 py-5">
+                <div className="text-center">
+                  <p className="font-sans text-sm text-foreground/60 leading-relaxed">
+                    This action is permanent and cannot be undone. Are you sure you want to delete
+                  </p>
+                  <p className="font-sans text-base font-bold text-foreground mt-2 px-2 py-1.5 bg-danger/5 rounded-lg border border-danger/10 inline-block">
+                    &quot;{deletingProduct?.title}&quot;
+                  </p>
+                </div>
+              </Modal.Body>
+              <Modal.Footer className="flex gap-3 px-8 pb-8 pt-2">
+                <Button
+                  variant="outline"
+                  slot="close"
+                  className="flex-1 h-11 font-sans font-semibold rounded-xl border-border-accent cursor-pointer text-sm"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  onPress={handleConfirmDelete}
+                  isDisabled={isDeleting}
+                  className="flex-1 h-11 font-sans font-bold rounded-xl cursor-pointer text-sm shadow-lg shadow-danger/20"
+                >
+                  {isDeleting ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Deleting...
+                    </span>
+                  ) : (
+                    "Delete Product"
+                  )}
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
       </Modal>
 
       <Modal
         isOpen={isEditOpen}
         onOpenChange={setIsEditOpen}
       >
-        <Modal.Backdrop isDismissable={false}>
-          <Modal.Container placement="center" size="lg" scroll="inside" className="bg-card-bg border border-border-accent">
+        <Modal.Backdrop className="bg-black/40 backdrop-blur-md">
+          <Modal.Container placement="center" size="lg" scroll="inside" className="bg-card-bg/95 border border-border-accent shadow-2xl rounded-2xl backdrop-blur-lg max-w-4xl">
             <Modal.Dialog>
-              {({ close }: { close: () => void }) => (
-                <>
-                  <Modal.Header className="font-display text-foreground text-xl">
-                    <Modal.Heading>
-                      Edit Product
-                      {editingProduct && (
-                        <span className="ml-2 text-sm font-sans font-normal text-foreground/50">
-                          — {editingProduct.title}
-                        </span>
-                      )}
-                    </Modal.Heading>
-                  </Modal.Header>
-                  <Modal.Body className="flex flex-col gap-5 py-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className={labelCls}>Product Title *</label>
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditTitle(e.target.value)}
-                          className={inputCls}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>Brand Name *</label>
-                        <input
-                          type="text"
-                          value={editBrandName}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditBrandName(e.target.value)}
-                          className={inputCls}
-                          required
-                        />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className={labelCls}>Model Number (Optional)</label>
-                        <input
-                          type="text"
-                          value={editModel}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditModel(e.target.value)}
-                          className={inputCls}
-                        />
-                      </div>
-                    </div>
+              <Modal.CloseTrigger className="text-foreground/40 hover:text-foreground transition-colors top-4 right-4" />
+              <Modal.Header className="font-display text-foreground text-xl">
+                <Modal.Heading>
+                  Edit Product
+                  {editingProduct && (
+                    <span className="ml-2 text-sm font-sans font-normal text-foreground/50">
+                      — {editingProduct.title}
+                    </span>
+                  )}
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body className="flex flex-col gap-5 py-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Product Title *</label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditTitle(e.target.value)}
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Brand Name *</label>
+                    <input
+                      type="text"
+                      value={editBrandName}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditBrandName(e.target.value)}
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>Model Number (Optional)</label>
+                    <input
+                      type="text"
+                      value={editModel}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditModel(e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
 
-                    <div>
-                      <label className={labelCls}>Brief Overview *</label>
-                      <textarea
-                        value={editOverview}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditOverview(e.target.value)}
-                        className={textareaCls}
-                        rows={2}
-                        required
-                      />
-                    </div>
+                <div>
+                  <label className={labelCls}>Brief Overview *</label>
+                  <textarea
+                    value={editOverview}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditOverview(e.target.value)}
+                    className={textareaCls}
+                    rows={2}
+                    required
+                  />
+                </div>
 
-                    <div>
-                      <label className={labelCls}>Detailed Description *</label>
-                      <textarea
-                        value={editDescription}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditDescription(e.target.value)}
-                        className={textareaCls}
-                        rows={4}
-                        required
-                      />
-                    </div>
+                <div>
+                  <label className={labelCls}>Detailed Description *</label>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditDescription(e.target.value)}
+                    className={textareaCls}
+                    rows={4}
+                    required
+                  />
+                </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className={labelCls}>Original Price ($) *</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={editOriginalPrice}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditOriginalPrice(e.target.value)}
-                          className={inputCls}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>Sale Price ($) *</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={editSalePrice}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditSalePrice(e.target.value)}
-                          className={inputCls}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>Stock Units *</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={editStockCount}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditStockCount(e.target.value)}
-                          className={inputCls}
-                          required
-                        />
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className={labelCls}>Original Price ($) *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editOriginalPrice}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditOriginalPrice(e.target.value)}
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Sale Price ($) *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editSalePrice}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditSalePrice(e.target.value)}
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Stock Units *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={editStockCount}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditStockCount(e.target.value)}
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                </div>
 
-                    {editingProduct && editingProduct.images.length > 0 && (
-                      <div>
-                        <p className="font-sans text-sm font-semibold text-foreground mb-2">
-                          Product Images{" "}
-                          <span className="text-foreground/40 font-normal text-xs">
-                            (read-only in this release)
-                          </span>
-                        </p>
-                        <div className="grid grid-cols-4 gap-2">
-                          {editingProduct.images.map((url, idx) => (
-                            <div
-                              key={url || idx}
-                              className="aspect-square rounded-xl overflow-hidden border border-border-accent bg-background"
-                            >
-                              <img
-                                src={url}
-                                alt={`img-${idx}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ))}
+                {editingProduct && editingProduct.images.length > 0 && (
+                  <div>
+                    <p className="font-sans text-sm font-semibold text-foreground mb-2">
+                      Product Images{" "}
+                      <span className="text-foreground/40 font-normal text-xs">
+                        (read-only in this release)
+                      </span>
+                    </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {editingProduct.images.map((url, idx) => (
+                        <div
+                          key={url || idx}
+                          className="aspect-square rounded-xl overflow-hidden border border-border-accent bg-background"
+                        >
+                          <img
+                            src={url}
+                            alt={`img-${idx}`}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <p className={labelCls}>Categories *</p>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {AVAILABLE_CATEGORIES.map((cat) => {
-                          const isSelected = editCategories.includes(cat.value);
-                          return (
-                            <button
-                              key={cat.value}
-                              type="button"
-                              onClick={() => toggleCategory(cat.value)}
-                              className={`px-3 py-1.5 text-xs font-semibold font-sans rounded-xl border transition-colors cursor-pointer ${
-                                isSelected
-                                  ? "bg-brand-primary-500 border-brand-primary-500 text-white"
-                                  : "bg-card-bg border-border-accent text-foreground/70 hover:border-brand-primary-500/50 hover:text-brand-primary-600 dark:hover:text-brand-primary-400"
-                              }`}
-                            >
-                              {cat.label}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      ))}
                     </div>
+                  </div>
+                )}
 
+                <div>
+                  <p className={labelCls}>Categories *</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {AVAILABLE_CATEGORIES.map((cat) => {
+                      const isSelected = editCategories.includes(cat.value);
+                      return (
+                        <button
+                          key={cat.value}
+                          type="button"
+                          onClick={() => toggleCategory(cat.value)}
+                          className={`px-3 py-1.5 text-xs font-semibold font-sans rounded-xl border transition-colors cursor-pointer ${
+                            isSelected
+                              ? "bg-brand-primary-500 border-brand-primary-500 text-white"
+                              : "bg-card-bg border-border-accent text-foreground/70 hover:border-brand-primary-500/50 hover:text-brand-primary-600 dark:hover:text-brand-primary-400"
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Variations</label>
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      type="text"
+                      placeholder="E.g. Polarized Black"
+                      value={editVariationInput}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditVariationInput(e.target.value)}
+                      className={inputSmCls}
+                      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleEditAddVariation();
+                        }
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onPress={handleEditAddVariation}
+                      className="rounded-xl font-sans cursor-pointer font-medium"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  {editVariations.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {editVariations.map((tag, idx) => (
+                        <span
+                          key={tag || idx}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-primary-500/10 text-brand-primary-600 dark:text-brand-primary-400 font-sans text-xs font-semibold rounded-xl border border-brand-primary-500/20"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => handleEditRemoveVariation(idx)}
+                            className="text-foreground/40 hover:text-danger cursor-pointer transition-colors"
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
                     <div>
-                      <label className={labelCls}>Variations</label>
-                      <div className="flex gap-2 mb-3">
+                      <p className="font-sans text-sm font-semibold text-foreground">
+                        Core Features
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onPress={() =>
+                        setEditCoreFeatures([
+                          ...editCoreFeatures,
+                          { name: "", value: "" },
+                        ])
+                      }
+                      className="rounded-xl flex items-center gap-1.5 font-sans font-medium cursor-pointer"
+                    >
+                      <FiPlus size={13} /> Add
+                    </Button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {editCoreFeatures.map((feat, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
                         <input
                           type="text"
-                          placeholder="E.g. Polarized Black"
-                          value={editVariationInput}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditVariationInput(e.target.value)}
-                          className={inputSmCls}
-                          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleEditAddVariation();
+                          placeholder="Feature Name"
+                          value={feat.name}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleEditFeatureChange(idx, "name", e.target.value)
+                          }
+                          className={`${inputSmCls} flex-1`}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Feature Value"
+                          value={feat.value}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleEditFeatureChange(idx, "value", e.target.value)
+                          }
+                          className={`${inputSmCls} flex-1`}
+                        />
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="ghost"
+                          onPress={() => {
+                            if (editCoreFeatures.length === 1) {
+                              setEditCoreFeatures([{ name: "", value: "" }]);
+                            } else {
+                              setEditCoreFeatures(
+                                editCoreFeatures.filter((_, i) => i !== idx)
+                              );
                             }
                           }}
+                          className="cursor-pointer rounded-xl text-danger hover:bg-danger-soft/10"
+                        >
+                          <FiTrash size={15} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <div>
+                      <p className="font-sans text-sm font-semibold text-foreground">
+                        Technical Specifications
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onPress={() =>
+                        setEditSpecifications([
+                          ...editSpecifications,
+                          { name: "", value: "" },
+                        ])
+                      }
+                      className="rounded-xl flex items-center gap-1.5 font-sans font-medium cursor-pointer"
+                    >
+                      <FiPlus size={13} /> Add
+                    </Button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {editSpecifications.map((spec, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          placeholder="Spec Label"
+                          value={spec.name}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleEditSpecChange(idx, "name", e.target.value)
+                          }
+                          className={`${inputSmCls} flex-1`}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Spec Info"
+                          value={spec.value}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleEditSpecChange(idx, "value", e.target.value)
+                          }
+                          className={`${inputSmCls} flex-1`}
                         />
                         <Button
+                          isIconOnly
                           size="sm"
-                          variant="secondary"
-                          onPress={handleEditAddVariation}
-                          className="rounded-xl font-sans cursor-pointer font-medium"
+                          variant="ghost"
+                          onPress={() => {
+                            if (editSpecifications.length === 1) {
+                              setEditSpecifications([{ name: "", value: "" }]);
+                            } else {
+                              setEditSpecifications(
+                                editSpecifications.filter((_, i) => i !== idx)
+                              );
+                            }
+                          }}
+                          className="cursor-pointer rounded-xl text-danger hover:bg-danger-soft/10"
                         >
-                          Add
+                          <FiTrash size={15} />
                         </Button>
                       </div>
-                      {editVariations.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {editVariations.map((tag, idx) => (
-                            <span
-                              key={tag || idx}
-                              className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-primary-500/10 text-brand-primary-600 dark:text-brand-primary-400 font-sans text-xs font-semibold rounded-xl border border-brand-primary-500/20"
-                            >
-                              {tag}
-                              <button
-                                type="button"
-                                onClick={() => handleEditRemoveVariation(idx)}
-                                className="text-foreground/40 hover:text-danger cursor-pointer transition-colors"
-                              >
-                                &times;
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    ))}
+                  </div>
+                </div>
 
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <div>
-                          <p className="font-sans text-sm font-semibold text-foreground">
-                            Core Features
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onPress={() =>
-                            setEditCoreFeatures([
-                              ...editCoreFeatures,
-                              { name: "", value: "" },
-                            ])
-                          }
-                          className="rounded-xl flex items-center gap-1.5 font-sans font-medium cursor-pointer"
-                        >
-                          <FiPlus size={13} /> Add
-                        </Button>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {editCoreFeatures.map((feat, idx) => (
-                          <div key={idx} className="flex gap-2 items-center">
-                            <input
-                              type="text"
-                              placeholder="Feature Name"
-                              value={feat.name}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                handleEditFeatureChange(idx, "name", e.target.value)
-                              }
-                              className={`${inputSmCls} flex-1`}
-                            />
-                            <input
-                              type="text"
-                              placeholder="Feature Value"
-                              value={feat.value}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                handleEditFeatureChange(idx, "value", e.target.value)
-                              }
-                              className={`${inputSmCls} flex-1`}
-                            />
-                            <Button
-                              isIconOnly
-                              size="sm"
-                              variant="ghost"
-                              onPress={() => {
-                                if (editCoreFeatures.length === 1) {
-                                  setEditCoreFeatures([{ name: "", value: "" }]);
-                                } else {
-                                  setEditCoreFeatures(
-                                    editCoreFeatures.filter((_, i) => i !== idx)
-                                  );
-                                }
-                              }}
-                              className="cursor-pointer rounded-xl text-danger hover:bg-danger-soft/10"
-                            >
-                              <FiTrash size={15} />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                <div className="flex justify-between items-center p-4 rounded-xl bg-background border border-border-accent/30">
+                  <div>
+                    <p className="font-sans text-sm font-semibold text-foreground">
+                      Private Listing
+                    </p>
+                    <p className="font-sans text-xs text-foreground/50">
+                      Hide product from public search queries
+                    </p>
+                  </div>
+                  <Switch
+                    isSelected={editIsPrivate}
+                    onChange={setEditIsPrivate}
+                  />
+                </div>
 
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <div>
-                          <p className="font-sans text-sm font-semibold text-foreground">
-                            Technical Specifications
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onPress={() =>
-                            setEditSpecifications([
-                              ...editSpecifications,
-                              { name: "", value: "" },
-                            ])
-                          }
-                          className="rounded-xl flex items-center gap-1.5 font-sans font-medium cursor-pointer"
-                        >
-                          <FiPlus size={13} /> Add
-                        </Button>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {editSpecifications.map((spec, idx) => (
-                          <div key={idx} className="flex gap-2 items-center">
-                            <input
-                              type="text"
-                              placeholder="Spec Label"
-                              value={spec.name}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                handleEditSpecChange(idx, "name", e.target.value)
-                              }
-                              className={`${inputSmCls} flex-1`}
-                            />
-                            <input
-                              type="text"
-                              placeholder="Spec Info"
-                              value={spec.value}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                handleEditSpecChange(idx, "value", e.target.value)
-                              }
-                              className={`${inputSmCls} flex-1`}
-                            />
-                            <Button
-                              isIconOnly
-                              size="sm"
-                              variant="ghost"
-                              onPress={() => {
-                                if (editSpecifications.length === 1) {
-                                  setEditSpecifications([{ name: "", value: "" }]);
-                                } else {
-                                  setEditSpecifications(
-                                    editSpecifications.filter((_, i) => i !== idx)
-                                  );
-                                }
-                              }}
-                              className="cursor-pointer rounded-xl text-danger hover:bg-danger-soft/10"
-                            >
-                              <FiTrash size={15} />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center p-4 rounded-xl bg-background border border-border-accent/30">
-                      <div>
-                        <p className="font-sans text-sm font-semibold text-foreground">
-                          Private Listing
-                        </p>
-                        <p className="font-sans text-xs text-foreground/50">
-                          Hide product from public search queries
-                        </p>
-                      </div>
-                      <Switch
-                        isSelected={editIsPrivate}
-                        onChange={setEditIsPrivate}
-                      />
-                    </div>
-
-                  </Modal.Body>
-                  <Modal.Footer>
-                    <Button
-                      variant="outline"
-                      onPress={close}
-                      className="font-sans font-medium rounded-xl border-border-accent cursor-pointer"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onPress={handleSubmitEdit}
-                      isDisabled={isUpdating}
-                      className="font-sans font-bold rounded-xl cursor-pointer"
-                    >
-                      {isUpdating ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </Modal.Footer>
-                  <Modal.CloseTrigger />
-                </>
-              )}
+              </Modal.Body>
+              <Modal.Footer>
+                <Button
+                  variant="outline"
+                  slot="close"
+                  className="font-sans font-medium rounded-xl border-border-accent cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="secondary"
+                  onPress={handleSubmitEdit}
+                  isDisabled={isUpdating}
+                  className="font-sans font-bold rounded-xl cursor-pointer"
+                >
+                  {isUpdating ? "Saving..." : "Save Changes"}
+                </Button>
+              </Modal.Footer>
             </Modal.Dialog>
           </Modal.Container>
         </Modal.Backdrop>
