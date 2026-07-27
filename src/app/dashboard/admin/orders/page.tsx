@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   fetchAllOrders,
   updateOrderStatus,
+  fetchAdminStats,
   AdminOrder,
 } from "@/lib/api/admin";
 import {
@@ -21,6 +22,19 @@ import {
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-300 border-amber-200 dark:border-amber-800" },
@@ -28,6 +42,7 @@ const STATUS_OPTIONS = [
   { value: "shipped", label: "Shipped", color: "text-purple-600 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-300 border-purple-200 dark:border-purple-800" },
   { value: "delivered", label: "Delivered", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800" },
   { value: "cancelled", label: "Cancelled", color: "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-300 border-red-200 dark:border-red-800" },
+  { value: "complete", label: "Complete", color: "text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800" },
 ];
 
 const PAYMENT_COLORS: Record<string, string> = {
@@ -225,6 +240,20 @@ function OrderRow({
   );
 }
 
+const MONTH_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "#f59e0b",
+  processing: "#3b82f6",
+  shipped: "#7C3AED",
+  delivered: "#10b981",
+  cancelled: "#ef4444",
+  complete: "#059669",
+};
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 1 });
@@ -232,6 +261,37 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [stats, setStats] = useState<{
+    totalRevenue: number;
+    totalOrders: number;
+    orderStatusDistribution: { name: string; value: number; color: string }[];
+    monthlyOrders: { name: string; orders: number }[];
+  } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const loadStats = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      const data = await fetchAdminStats();
+      setStats({
+        totalRevenue: data.totalRevenue,
+        totalOrders: data.totalOrders,
+        orderStatusDistribution: data.orderStatusDistribution.map((d) => ({
+          name: d.status.charAt(0).toUpperCase() + d.status.slice(1),
+          value: d.count,
+          color: STATUS_COLORS[d.status] ?? "#6b7280",
+        })),
+        monthlyOrders: data.monthlyRevenue.map((m) => ({
+          name: MONTH_NAMES[m.month - 1] ?? `M${m.month}`,
+          orders: m.orders,
+        })),
+      });
+    } catch {
+      // stats are non-critical
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
 
   const loadOrders = useCallback(async (page = 1) => {
     try {
@@ -248,8 +308,9 @@ export default function AdminOrdersPage() {
   }, [statusFilter, search]);
 
   useEffect(() => {
+    loadStats();
     loadOrders(1);
-  }, [loadOrders]);
+  }, [loadOrders, loadStats]);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
@@ -293,6 +354,67 @@ export default function AdminOrdersPage() {
           <FiRefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
           Refresh
         </button>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+        <div className="lg:col-span-1 rounded-2xl bg-card-bg border border-border-accent shadow-sm p-5">
+          <p className="font-sans text-xs font-medium text-foreground/50 uppercase tracking-wide mb-1">Total Orders</p>
+          {statsLoading ? (
+            <div className="h-7 w-16 mt-1 rounded-lg bg-foreground/10 animate-pulse" />
+          ) : (
+            <p className="font-display text-2xl font-extrabold text-foreground">{stats?.totalOrders ?? 0}</p>
+          )}
+        </div>
+        <div className="lg:col-span-1 rounded-2xl bg-card-bg border border-border-accent shadow-sm p-5">
+          <p className="font-sans text-xs font-medium text-foreground/50 uppercase tracking-wide mb-1">Total Revenue</p>
+          {statsLoading ? (
+            <div className="h-7 w-16 mt-1 rounded-lg bg-foreground/10 animate-pulse" />
+          ) : (
+            <p className="font-display text-2xl font-extrabold text-foreground">${(stats?.totalRevenue ?? 0).toLocaleString()}</p>
+          )}
+        </div>
+        <div className="lg:col-span-1 rounded-2xl bg-card-bg border border-border-accent shadow-sm p-4">
+          <h4 className="font-sans text-[10px] font-semibold text-foreground/50 uppercase tracking-wide mb-2">Order Status</h4>
+          {statsLoading ? (
+            <div className="h-20 rounded-lg bg-foreground/5 animate-pulse" />
+          ) : stats && stats.orderStatusDistribution.length > 0 ? (
+            <ResponsiveContainer width="100%" height={90}>
+              <PieChart>
+                <Pie data={stats.orderStatusDistribution} cx="50%" cy="50%" innerRadius={28} outerRadius={40} paddingAngle={2} dataKey="value">
+                  {stats.orderStatusDistribution.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ borderRadius: "12px", border: "1px solid rgba(100,116,139,0.2)", background: "var(--card-bg)", fontSize: 12 }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-20 flex items-center justify-center text-foreground/30 font-sans text-xs">No data</div>
+          )}
+        </div>
+        <div className="lg:col-span-1 rounded-2xl bg-card-bg border border-border-accent shadow-sm p-4">
+          <h4 className="font-sans text-[10px] font-semibold text-foreground/50 uppercase tracking-wide mb-2">Monthly Orders</h4>
+          {statsLoading ? (
+            <div className="h-20 rounded-lg bg-foreground/5 animate-pulse" />
+          ) : stats && stats.monthlyOrders.length > 0 ? (
+            <ResponsiveContainer width="100%" height={90}>
+              <BarChart data={stats.monthlyOrders}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.08)" />
+                <XAxis dataKey="name" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} opacity={0.5} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ borderRadius: "12px", border: "1px solid rgba(100,116,139,0.2)", background: "var(--card-bg)", fontSize: 12 }}
+                />
+                <Bar dataKey="orders" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-20 flex items-center justify-center text-foreground/30 font-sans text-xs">No data</div>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-5">

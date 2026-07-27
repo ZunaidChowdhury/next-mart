@@ -48,6 +48,7 @@ export interface TransactionRecord {
   totalAmount: number;
   currency: string;
   paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
+  orderStatus: string;
   shippingAddress: {
     line1: string;
     city: string;
