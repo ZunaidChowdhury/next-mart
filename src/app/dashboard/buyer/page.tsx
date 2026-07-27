@@ -2,19 +2,14 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { fetchTransactionHistory, TransactionRecord } from "@/lib/api/transaction";
-import { addToCart } from "@/lib/store/slices/cartSlice";
-import { removeFromWishlist } from "@/lib/store/slices/wishlistSlice";
-import { syncRemoveFromWishlist } from "@/lib/api/wishlist";
+
 import { Button } from "@heroui/react";
 import {
   FiPackage,
-  FiHeart,
   FiShoppingCart,
-  FiTrash2,
-  FiAlertTriangle,
   FiMapPin,
   FiDollarSign,
   FiCalendar,
@@ -44,13 +39,16 @@ function formatDate(isoDate: string): string {
   });
 }
 
-function getActiveStep(paymentStatus: string, createdAt: string): number {
-  if (paymentStatus !== "completed") return 0;
-  const days = getDaysSince(createdAt);
-  if (days >= 5) return 4;
-  if (days >= 4) return 3;
-  if (days >= 2) return 2;
-  return 1;
+function getActiveStep(orderStatus: string): number {
+  switch (orderStatus) {
+    case "pending":    return 1;
+    case "processing": return 1;
+    case "shipped":    return 2;
+    case "delivered":  return 3;
+    case "complete":
+    case "completed":  return 4;
+    default:           return 1;
+  }
 }
 
 // ─── Payment Status Chip ──────────────────────────────────────────────────────
@@ -169,8 +167,35 @@ function DeliveryStepper({
 
 // ─── Order Card ───────────────────────────────────────────────────────────────
 
+// ─── Order Status Badge ──────────────────────────────────────────────────────
+
+const orderStatusConfig: Record<string, { label: string; classes: string }> = {
+  pending:    { label: "Pending",    classes: "text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800" },
+  processing: { label: "Processing", classes: "text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800" },
+  shipped:    { label: "Shipped",    classes: "text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800" },
+  delivered:  { label: "Delivered", classes: "text-teal-700 bg-teal-100 dark:text-teal-300 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-800" },
+  complete:   { label: "Complete",  classes: "text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800" },
+  completed:  { label: "Complete",  classes: "text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800" },
+  cancelled:  { label: "Cancelled", classes: "text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/30 border border-red-200 dark:border-red-800" },
+  canceled:   { label: "Cancelled", classes: "text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/30 border border-red-200 dark:border-red-800" },
+};
+
+function OrderStatusChip({ status }: { status: string }) {
+  const cfg = orderStatusConfig[status] ?? {
+    label: status,
+    classes: "text-foreground/70 bg-foreground/10 border border-border-accent",
+  };
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold font-sans ${cfg.classes}`}>
+      {cfg.label}
+    </span>
+  );
+}
+
+// ─── Order Card ───────────────────────────────────────────────────────────────
+
 function OrderCard({ order, index }: { order: TransactionRecord; index: number }) {
-  const activeStep = getActiveStep(order.paymentStatus, order.createdAt);
+  const activeStep = getActiveStep(order.orderStatus);
 
   return (
     <motion.div
@@ -189,7 +214,8 @@ function OrderCard({ order, index }: { order: TransactionRecord; index: number }
             {order.transactionId}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+          <OrderStatusChip status={order.orderStatus} />
           <StatusChip status={order.paymentStatus} />
           <span className="font-display text-base font-bold text-brand-primary-600 dark:text-brand-primary-400">
             ${order.totalAmount.toFixed(2)}{" "}
@@ -266,19 +292,18 @@ type Tab = "orders" | "purchased";
 
 export default function BuyerDashboardPage() {
   const router = useRouter();
-  const dispatch = useDispatch();
   const searchParams = useSearchParams();
 
   const { isAuthenticated, role, email, name } = useSelector(
     (state: RootState) => state.user
   );
-
   const initialTab = (searchParams.get("tab") as Tab) || "orders";
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [orders, setOrders] = useState<TransactionRecord[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const pollingRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   const activeOrders = useMemo(() => {
     return orders.filter(
@@ -306,25 +331,34 @@ export default function BuyerDashboardPage() {
     setAuthChecked(true);
   }, [isAuthenticated, role, router]);
 
-  // ── Fetch order history ──
+  // ── Fetch order history + poll every 30s ──
   useEffect(() => {
     if (!authChecked) return;
 
-    const loadOrders = async () => {
+    const loadOrders = async (silent = false) => {
       try {
-        setIsLoadingOrders(true);
+        if (!silent) setIsLoadingOrders(true);
         const data = await fetchTransactionHistory();
         setOrders(data.transactions);
+        setOrdersError(null);
       } catch (err: any) {
         console.error("Failed to load order history:", err);
-        setOrdersError("Placeholder [DataLoadFailed]");
-        toast.error("Failed to load order history.");
+        if (!silent) {
+          setOrdersError("Placeholder [DataLoadFailed]");
+          toast.error("Failed to load order history.");
+        }
       } finally {
-        setIsLoadingOrders(false);
+        if (!silent) setIsLoadingOrders(false);
       }
     };
 
     loadOrders();
+
+    // Poll silently every 30 seconds to pick up admin status changes
+    pollingRef.current = setInterval(() => loadOrders(true), 30000);
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
   }, [authChecked]);
 
 
