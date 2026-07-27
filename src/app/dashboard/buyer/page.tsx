@@ -262,7 +262,7 @@ function OrderCard({ order, index }: { order: TransactionRecord; index: number }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-type Tab = "orders" | "purchased" | "wishlist";
+type Tab = "orders" | "purchased";
 
 export default function BuyerDashboardPage() {
   const router = useRouter();
@@ -272,9 +272,6 @@ export default function BuyerDashboardPage() {
   const { isAuthenticated, role, email, name } = useSelector(
     (state: RootState) => state.user
   );
-  const wishlistItems = useSelector(
-    (state: RootState) => state.wishlist.items || []
-  );
 
   const initialTab = (searchParams.get("tab") as Tab) || "orders";
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
@@ -282,6 +279,18 @@ export default function BuyerDashboardPage() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [ordersError, setOrdersError] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+
+  const activeOrders = useMemo(() => {
+    return orders.filter(
+      (order) => order.orderStatus !== "complete" && order.orderStatus !== "completed"
+    );
+  }, [orders]);
+
+  const completedOrders = useMemo(() => {
+    return orders.filter(
+      (order) => order.orderStatus === "complete" || order.orderStatus === "completed"
+    );
+  }, [orders]);
 
   // ── Auth guard ──
   useEffect(() => {
@@ -318,25 +327,6 @@ export default function BuyerDashboardPage() {
     loadOrders();
   }, [authChecked]);
 
-  // ── Wishlist actions ──
-  const handleAddToCart = (item: (typeof wishlistItems)[0]) => {
-    dispatch(
-      addToCart({
-        product: item.product,
-        title: item.title,
-        quantity: 1,
-        price: item.price,
-        image: item.image,
-      })
-    );
-    toast.success(`"${item.title}" added to cart!`);
-  };
-
-  const handleRemoveFromWishlist = (productId: string, title: string) => {
-    dispatch(removeFromWishlist(productId));
-    syncRemoveFromWishlist(productId).catch(() => {});
-    toast.info(`"${title}" removed from wishlist.`);
-  };
 
   // ── Display guard while auth is resolving ──
   if (!authChecked) {
@@ -386,7 +376,6 @@ export default function BuyerDashboardPage() {
             [
               { key: "orders", label: "Orders", icon: FiPackage },
               { key: "purchased", label: "Purchase History", icon: FiArchive },
-              { key: "wishlist", label: "Wishlist", icon: FiHeart },
             ] as { key: Tab; label: string; icon: React.ElementType }[]
           ).map(({ key, label, icon: Icon }) => (
             <button
@@ -401,19 +390,14 @@ export default function BuyerDashboardPage() {
             >
               <Icon size={15} />
               {label}
-              {key === "wishlist" && wishlistItems.length > 0 && (
+              {key === "orders" && !isLoadingOrders && activeOrders.length > 0 && (
                 <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary-100 dark:bg-brand-primary-900/40 text-[10px] font-bold text-brand-primary-600 dark:text-brand-primary-400">
-                  {wishlistItems.length}
+                  {activeOrders.length}
                 </span>
               )}
-              {key === "orders" && !isLoadingOrders && orders.length > 0 && (
+              {key === "purchased" && !isLoadingOrders && completedOrders.length > 0 && (
                 <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary-100 dark:bg-brand-primary-900/40 text-[10px] font-bold text-brand-primary-600 dark:text-brand-primary-400">
-                  {orders.length}
-                </span>
-              )}
-              {key === "purchased" && !isLoadingOrders && orders.length > 0 && (
-                <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary-100 dark:bg-brand-primary-900/40 text-[10px] font-bold text-brand-primary-600 dark:text-brand-primary-400">
-                  {orders.reduce((sum, o) => sum + o.items.length, 0)}
+                  {completedOrders.reduce((sum, o) => sum + o.items.length, 0)}
                 </span>
               )}
             </button>
@@ -439,19 +423,19 @@ export default function BuyerDashboardPage() {
                     Loading your orders...
                   </p>
                 </div>
-              ) : ordersError || orders.length === 0 ? (
+              ) : ordersError || activeOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4 rounded-2xl border border-dashed border-border-accent">
                   <div className="h-16 w-16 rounded-full bg-foreground/5 flex items-center justify-center text-foreground/30">
                     <FiPackage size={30} />
                   </div>
                   <div className="text-center">
                     <p className="font-display text-lg font-bold text-foreground/60">
-                      No Orders Yet
+                      No Active Orders
                     </p>
                     <p className="font-sans text-sm text-foreground/40 mt-1">
                       {ordersError === "Placeholder [DataLoadFailed]"
                         ? "Could not load your order history. Please try again later."
-                        : "Your completed orders will appear here."}
+                        : "Your active orders will appear here."}
                     </p>
                   </div>
                   <Link href="/shop">
@@ -466,7 +450,7 @@ export default function BuyerDashboardPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-5">
-                  {orders.map((order, index) => (
+                  {activeOrders.map((order, index) => (
                     <OrderCard key={order._id} order={order} index={index} />
                   ))}
                 </div>
@@ -490,7 +474,7 @@ export default function BuyerDashboardPage() {
                     Loading purchase history...
                   </p>
                 </div>
-              ) : ordersError || orders.length === 0 ? (
+              ) : ordersError || completedOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4 rounded-2xl border border-dashed border-border-accent">
                   <div className="h-16 w-16 rounded-full bg-foreground/5 flex items-center justify-center text-foreground/30">
                     <FiArchive size={30} />
@@ -500,7 +484,7 @@ export default function BuyerDashboardPage() {
                       No Purchase History
                     </p>
                     <p className="font-sans text-sm text-foreground/40 mt-1">
-                      Items you buy will show up here.
+                      Completed items you buy will show up here.
                     </p>
                   </div>
                   <Link href="/shop">
@@ -515,7 +499,7 @@ export default function BuyerDashboardPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {orders.flatMap((order) =>
+                  {completedOrders.flatMap((order) =>
                     order.items.map((item) => ({
                       ...item,
                       transactionId: order.transactionId,
@@ -562,106 +546,6 @@ export default function BuyerDashboardPage() {
                       </div>
                     </motion.div>
                   ))}
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* Wishlist Tab */}
-          {activeTab === "wishlist" && (
-            <motion.div
-              key="wishlist"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.25 }}
-            >
-              {wishlistItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-4 rounded-2xl border border-dashed border-border-accent">
-                  <div className="h-16 w-16 rounded-full bg-foreground/5 flex items-center justify-center text-foreground/30">
-                    <FiHeart size={30} />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-display text-lg font-bold text-foreground/60">
-                      Wishlist is Empty
-                    </p>
-                    <p className="font-sans text-sm text-foreground/40 mt-1">
-                      Save your favorite items here for quick access later.
-                    </p>
-                  </div>
-                  <Link href="/shop">
-                    <Button
-                      variant="primary"
-                      className="font-sans font-semibold rounded-xl cursor-pointer mt-2 flex items-center gap-2"
-                    >
-                      <FiShoppingCart size={15} />
-                      Discover Products
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <AnimatePresence initial={false}>
-                    {wishlistItems.map((item, index) => (
-                      <motion.div
-                        key={item.product}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: -24 }}
-                        transition={{ duration: 0.28, delay: index * 0.05 }}
-                        className="flex items-center gap-4 rounded-2xl bg-card-bg border border-border-accent shadow-sm p-4"
-                      >
-                        {/* Product image */}
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.title}
-                            className="h-16 w-16 rounded-xl object-cover border border-border-accent/40 shrink-0"
-                          />
-                        ) : (
-                          <div className="h-16 w-16 rounded-xl bg-foreground/5 border border-border-accent/40 flex items-center justify-center shrink-0 text-foreground/30">
-                            <FiPackage size={22} />
-                          </div>
-                        )}
-
-                        {/* Product info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-display text-base font-bold text-foreground truncate">
-                            {item.title}
-                          </p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <FiDollarSign size={12} className="text-brand-primary-500" />
-                            <span className="font-sans text-sm font-semibold text-brand-primary-600 dark:text-brand-primary-400">
-                              {item.price.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            id={`wishlist-add-${item.product}`}
-                            variant="primary"
-                            onPress={() => handleAddToCart(item)}
-                            className="font-sans font-semibold rounded-xl cursor-pointer flex items-center gap-1.5 text-sm h-9 px-3"
-                          >
-                            <FiShoppingCart size={13} />
-                            <span className="hidden sm:inline">Add to Cart</span>
-                          </Button>
-                          <button
-                            id={`wishlist-remove-${item.product}`}
-                            onClick={() =>
-                              handleRemoveFromWishlist(item.product, item.title)
-                            }
-                            className="h-9 w-9 rounded-xl border border-border-accent bg-foreground/[0.03] text-foreground/50 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800 transition-all flex items-center justify-center cursor-pointer"
-                            title="Remove from wishlist"
-                          >
-                            <FiTrash2 size={14} />
-                          </button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
                 </div>
               )}
             </motion.div>

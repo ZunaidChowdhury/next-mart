@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { fetchAdminStats, AdminStatsResponse } from "@/lib/api/admin";
+import React, { useEffect, useState, useCallback } from "react";
+import { fetchAdminStats, AdminStatsResponse, fetchAllOrders, updateOrderStatus, AdminOrder } from "@/lib/api/admin";
 import {
   FiDollarSign,
   FiShoppingBag,
@@ -9,6 +9,8 @@ import {
   FiUsers,
   FiTrendingUp,
   FiRefreshCw,
+  FiPackage,
+  FiCheckCircle,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -37,6 +39,8 @@ const STATUS_COLORS: Record<string, string> = {
   shipped: "#7C3AED",
   delivered: "#10b981",
   cancelled: "#ef4444",
+  complete: "#059669",
+  completed: "#059669",
 };
 
 const DEFAULT_COLOR = "#6b7280";
@@ -82,8 +86,10 @@ function StatCard({
 export default function AdminDashboardOverview() {
   const [stats, setStats] = useState<AdminStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingOrders, setPendingOrders] = useState<AdminOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await fetchAdminStats();
@@ -94,11 +100,38 @@ export default function AdminDashboardOverview() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  const loadPendingOrders = useCallback(async () => {
+    try {
+      setOrdersLoading(true);
+      const data = await fetchAllOrders(1, 10, "pending");
+      setPendingOrders(data.orders);
+    } catch (err: any) {
+      console.error("Failed to load pending orders:", err);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, []);
+
+  const loadData = useCallback(() => {
+    loadStats();
+    loadPendingOrders();
+  }, [loadStats, loadPendingOrders]);
 
   useEffect(() => {
-    loadStats();
-  }, []);
+    loadData();
+  }, [loadData]);
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      await updateOrderStatus(orderId, newStatus);
+      toast.success(`Order status updated to "${newStatus}".`);
+      loadData();
+    } catch (err: any) {
+      toast.error("Failed to update order status.");
+    }
+  };
 
   const chartData =
     stats?.monthlyRevenue.map((m) => ({
@@ -126,7 +159,7 @@ export default function AdminDashboardOverview() {
           </p>
         </div>
         <button
-          onClick={loadStats}
+          onClick={loadData}
           disabled={isLoading}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-sans font-medium text-foreground/60 hover:text-foreground hover:bg-foreground/[0.04] border border-border-accent transition-all cursor-pointer disabled:opacity-50"
         >
@@ -276,6 +309,89 @@ export default function AdminDashboardOverview() {
             </ResponsiveContainer>
           )}
         </div>
+      </div>
+
+      {/* Recent Pending Orders */}
+      <div className="rounded-2xl bg-card-bg border border-border-accent shadow-sm p-6 mb-8">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <FiPackage size={18} className="text-brand-primary-500" />
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Recent Pending Orders
+            </h2>
+          </div>
+          <span className="text-xs font-sans text-foreground/50">
+            {pendingOrders.length} pending order{pendingOrders.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {ordersLoading ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-2">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-foreground/10 border-t-brand-primary-500" />
+            <p className="font-sans text-xs text-foreground/50">Loading pending orders...</p>
+          </div>
+        ) : pendingOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-3 border border-dashed border-border-accent/40 rounded-xl bg-foreground/[0.01]">
+            <div className="h-10 w-10 rounded-full bg-foreground/5 flex items-center justify-center text-foreground/30">
+              <FiCheckCircle size={18} />
+            </div>
+            <p className="font-sans text-xs text-foreground/50">No pending orders to process.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-sans text-sm">
+              <thead>
+                <tr className="border-b border-border-accent/50 text-foreground/40 text-xs font-semibold uppercase tracking-wider">
+                  <th className="py-3 pl-4">Transaction ID</th>
+                  <th className="py-3">Customer</th>
+                  <th className="py-3">Items</th>
+                  <th className="py-3">Total Amount</th>
+                  <th className="py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingOrders.map((order) => (
+                  <tr key={order._id} className="border-b border-border-accent/30 hover:bg-foreground/[0.01] transition-colors">
+                    <td className="py-4 pl-4 font-mono text-xs text-foreground/60">
+                      {order.transactionId.slice(0, 14)}...
+                    </td>
+                    <td className="py-4">
+                      <div>
+                        <p className="font-semibold text-foreground">{order.user?.name ?? "Unknown"}</p>
+                        <p className="text-xs text-foreground/40">{order.user?.email ?? ""}</p>
+                      </div>
+                    </td>
+                    <td className="py-4 text-foreground/75">
+                      {order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                    </td>
+                    <td className="py-4 font-bold text-foreground">
+                      ${order.totalAmount.toFixed(2)}
+                    </td>
+                    <td className="py-4 pr-4">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {[
+                          { label: "Processing", value: "processing", color: "hover:bg-blue-500/10 hover:text-blue-500 hover:border-blue-500" },
+                          { label: "Shipped", value: "shipped", color: "hover:bg-purple-500/10 hover:text-purple-500 hover:border-purple-500" },
+                          { label: "Delivered", value: "delivered", color: "hover:bg-emerald-500/10 hover:text-emerald-500 hover:border-emerald-500" },
+                          { label: "Canceled", value: "cancelled", color: "hover:bg-red-500/10 hover:text-red-500 hover:border-red-500" },
+                          { label: "Complete", value: "complete", color: "hover:bg-teal-500/10 hover:text-teal-500 hover:border-teal-500" },
+                        ].map((btn) => (
+                          <button
+                            key={btn.value}
+                            onClick={() => handleStatusChange(order._id, btn.value)}
+                            className={`text-[10px] font-semibold px-2 py-1 rounded-lg border border-border-accent text-foreground/60 transition-all cursor-pointer ${btn.color}`}
+                          >
+                            {btn.label}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

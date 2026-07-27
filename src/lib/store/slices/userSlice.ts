@@ -10,7 +10,7 @@ export interface UserState {
   isAuthenticated: boolean;
 }
 
-const initialState: UserState = {
+export const initialState: UserState = {
   id: null,
   name: null,
   email: null,

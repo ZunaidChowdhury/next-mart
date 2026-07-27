@@ -3,12 +3,18 @@ import { persistStore, persistReducer } from 'redux-persist';
 import storage from './storage';
 import cartReducer from './slices/cartSlice';
 import wishlistReducer from './slices/wishlistSlice';
-import userReducer from './slices/userSlice';
+import userReducer, { initialState as userInitialState } from './slices/userSlice';
+
+const safeUserReducer = (state: any, action: any) => {
+  const s = state === null ? undefined : state;
+  const result = userReducer(s, action);
+  return result === null ? userInitialState : result;
+};
 
 const rootReducer = combineReducers({
   cart: cartReducer,
   wishlist: wishlistReducer,
-  user: userReducer,
+  user: safeUserReducer,
 });
 
 const persistConfig = {
@@ -19,8 +25,19 @@ const persistConfig = {
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
+const rootReducerWithSafety = (state: any, action: any) => {
+  const nextState = persistedReducer(state, action);
+  if (nextState && (nextState.user === null || nextState.user === undefined)) {
+    return {
+      ...nextState,
+      user: userInitialState,
+    };
+  }
+  return nextState;
+};
+
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: rootReducerWithSafety,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
