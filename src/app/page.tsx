@@ -68,6 +68,7 @@ export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [emailInput, setEmailInput] = useState("");
   const [featuredProducts, setFeaturedProducts] = useState<IProductItem[]>([]);
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
   
   // Auto-rotate hero slider slides
   useEffect(() => {
@@ -79,9 +80,11 @@ export default function Home() {
 
   // Fetch featured products (positions 1-8)
   useEffect(() => {
+    setIsLoadingFeatured(true);
     fetchFeaturedProducts()
       .then((data) => setFeaturedProducts(data.products))
-      .catch(() => setFeaturedProducts([]));
+      .catch(() => setFeaturedProducts([]))
+      .finally(() => setIsLoadingFeatured(false));
   }, []);
 
   const handleNextSlide = () => {
@@ -246,7 +249,21 @@ export default function Home() {
             <p className="font-sans text-sm text-foreground/60">Take a look at this season's featured premium releases.</p>
           </div>
           
-          {featuredProducts.length > 0 ? (
+          {isLoadingFeatured ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div key={idx} className="p-4 bg-card-bg border border-border-accent/40 rounded-2xl animate-pulse flex flex-col gap-4">
+                  <div className="w-full aspect-[4/5] bg-foreground/5 rounded-xl" />
+                  <div className="h-4 bg-foreground/10 rounded w-2/3" />
+                  <div className="h-3 bg-foreground/5 rounded w-1/2" />
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="h-5 bg-foreground/10 rounded w-1/3" />
+                    <div className="h-8 bg-foreground/10 rounded w-1/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.map((prod) => (
                 <ProductCard key={prod._id} product={prod} />
